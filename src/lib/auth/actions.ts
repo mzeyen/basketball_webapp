@@ -1,0 +1,53 @@
+"use server";
+
+import { redirect } from "next/navigation";
+
+import { createUser, findUserByEmail } from "@/lib/db";
+import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { clearSessionCookie, setSessionCookie } from "@/lib/auth/session";
+
+function getString(formData: FormData, key: string): string {
+  return String(formData.get(key) ?? "").trim();
+}
+
+export async function registerAction(formData: FormData): Promise<void> {
+  const email = getString(formData, "email").toLowerCase();
+  const password = getString(formData, "password");
+
+  if (!email || password.length < 8) {
+    redirect("/register?error=invalid-input");
+  }
+
+  const existingUser = await findUserByEmail(email);
+
+  if (existingUser) {
+    redirect("/register?error=email-taken");
+  }
+
+  const user = await createUser({
+    email,
+    passwordHash: await hashPassword(password),
+    role: email.endsWith("@basketball.local") ? "admin" : "user",
+  });
+
+  await setSessionCookie(user.id, user.role);
+  redirect("/dashboard");
+}
+
+export async function loginAction(formData: FormData): Promise<void> {
+  const email = getString(formData, "email").toLowerCase();
+  const password = getString(formData, "password");
+  const user = await findUserByEmail(email);
+
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    redirect("/login?error=invalid-credentials");
+  }
+
+  await setSessionCookie(user.id, user.role);
+  redirect("/dashboard");
+}
+
+export async function logoutAction(): Promise<void> {
+  await clearSessionCookie();
+  redirect("/login");
+}
