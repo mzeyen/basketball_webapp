@@ -62,6 +62,7 @@ http://localhost:3000
 ```
 
 The Windows-only `dev:local`, `build:local`, and `start:local` scripts first stop competing Next.js processes for this project. This keeps `.next` consistent and prevents stale HTML from pointing to missing CSS files on local Windows machines.
+They use port 3000 locally.
 
 Useful checks:
 
@@ -81,6 +82,8 @@ npm install
 npm run build
 npm run start
 ```
+
+The production start script uses `PORT` when it is set by the host. If `PORT` is not set, it defaults to port 80.
 
 Do not use the `*:local` scripts on Render because they call PowerShell.
 

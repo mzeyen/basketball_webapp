@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/start.mjs",
     "dev:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 dev",
     "build:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 build",
     "start:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 start",
