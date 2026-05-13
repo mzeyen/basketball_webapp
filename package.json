@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 dev",
-    "build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 build",
-    "start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 start",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "dev:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 dev",
+    "build:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 build",
+    "start:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/next-local.ps1 start",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

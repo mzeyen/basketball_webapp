@@ -50,7 +50,7 @@ npm.cmd install
 Start the development server:
 
 ```bash
-npm.cmd run dev
+npm.cmd run dev:local
 ```
 
 Then open:
@@ -59,13 +59,25 @@ Then open:
 http://localhost:3000
 ```
 
-The local `dev`, `build`, and `start` scripts first stop competing Next.js processes for this project. This keeps `.next` consistent and prevents stale HTML from pointing to missing CSS files.
+The Windows-only `dev:local`, `build:local`, and `start:local` scripts first stop competing Next.js processes for this project. This keeps `.next` consistent and prevents stale HTML from pointing to missing CSS files on local Windows machines.
 
 Useful checks:
 
 ```bash
 npm.cmd run typecheck
-npm.cmd run build
+npm.cmd run build:local
 ```
 
 Set `AUTH_SECRET` in production to a strong random value so signed session cookies cannot be forged.
+
+## Render deployment
+
+Render runs on Linux, so the default scripts must stay platform-neutral:
+
+```bash
+npm install
+npm run build
+npm run start
+```
+
+Do not use the `*:local` scripts on Render because they call PowerShell.
