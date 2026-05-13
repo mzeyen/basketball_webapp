@@ -8,6 +8,8 @@ export type User = {
   passwordHash: string;
   role: Role;
   emailVerifiedAt: string | null;
+  blockedAt?: string | null;
+  passwordResetAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };

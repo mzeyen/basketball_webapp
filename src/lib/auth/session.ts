@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 
 import { canAccessAdmin } from "@/lib/rbac/roles";
+import { findUserById } from "@/lib/db";
 import {
   createSessionToken,
   sessionCookieName,
@@ -31,8 +32,22 @@ export async function clearSessionCookie(): Promise<void> {
 export async function getCurrentSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
+  const session = await verifySessionToken(token);
 
-  return verifySessionToken(token);
+  if (!session) {
+    return null;
+  }
+
+  const user = await findUserById(session.userId);
+
+  if (!user || user.blockedAt) {
+    return null;
+  }
+
+  return {
+    ...session,
+    role: user.role,
+  };
 }
 
 export async function requireUserSession(): Promise<SessionPayload> {

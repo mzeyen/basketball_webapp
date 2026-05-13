@@ -14,10 +14,13 @@ export function AppHeader({ email, role }: AppHeaderProps) {
       <Link href="/" className="brand">
         🏀 CourtControl
       </Link>
-      <nav>
-        <Link href="/dashboard">Dashboard</Link>
-        {role === "admin" ? <Link href="/admin">Admin</Link> : null}
-      </nav>
+      {email ? (
+        <nav>
+          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/training-plans">Trainingspläne</Link>
+          {role === "admin" ? <Link href="/admin">Admin</Link> : null}
+        </nav>
+      ) : null}
       {email ? (
         <form action={logoutAction}>
           <span>{email}</span>

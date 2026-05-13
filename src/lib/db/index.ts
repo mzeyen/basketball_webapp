@@ -38,11 +38,51 @@ export async function findUserById(id: string): Promise<User | null> {
   return database.users.find((user) => user.id === id) ?? null;
 }
 
+export async function listUsers(): Promise<User[]> {
+  const database = await readDatabase();
+  return [...database.users].sort(
+    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+  );
+}
+
 export async function createUser(input: NewUserInput): Promise<User> {
   const database = await readDatabase();
   const user = createUserRecord(input);
 
   database.users.push(user);
+  await writeDatabase(database);
+
+  return user;
+}
+
+export async function setUserBlocked(userId: string, blocked: boolean): Promise<User | null> {
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.id === userId);
+
+  if (!user) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+  user.blockedAt = blocked ? now : null;
+  user.updatedAt = now;
+  await writeDatabase(database);
+
+  return user;
+}
+
+export async function updateUserPassword(userId: string, passwordHash: string): Promise<User | null> {
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.id === userId);
+
+  if (!user) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+  user.passwordHash = passwordHash;
+  user.passwordResetAt = now;
+  user.updatedAt = now;
   await writeDatabase(database);
 
   return user;

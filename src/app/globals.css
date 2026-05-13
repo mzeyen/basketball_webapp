@@ -28,6 +28,7 @@ a {
 }
 
 button,
+.danger-button,
 .secondary-button {
   border: 0;
   border-radius: 999px;
@@ -40,9 +41,27 @@ button,
   padding: 0.8rem 1.2rem;
 }
 
+button:disabled,
+.danger-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 button:hover,
+.danger-button:hover,
 .secondary-button:hover {
   background: var(--primary-dark);
+}
+
+.danger-button {
+  background: rgba(255, 107, 107, 0.14);
+  color: var(--danger);
+}
+
+.danger-button:hover {
+  background: var(--danger);
+  color: #2b0b0b;
 }
 
 .secondary-button {
@@ -85,6 +104,10 @@ main {
   padding: 5rem 0;
 }
 
+.hero-single {
+  grid-template-columns: minmax(0, 760px);
+}
+
 .hero h1,
 .card h1,
 .card h2 {
@@ -110,6 +133,34 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.dashboard-overview {
+  align-items: stretch;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+}
+
+.account-summary {
+  align-content: start;
+}
+
+.account-summary-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.account-summary-grid div {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+}
+
+.account-summary-grid h3,
+.account-summary-grid p {
+  margin: 0.2rem 0;
+}
+
 .stack {
   display: grid;
   gap: 1rem;
@@ -126,7 +177,8 @@ label {
   gap: 0.4rem;
 }
 
-input {
+input,
+select {
   background: var(--surface-light);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
@@ -152,14 +204,161 @@ input {
   padding: 0.8rem 1rem;
 }
 
+.form-success {
+  background: rgba(46, 204, 113, 0.14);
+  border-radius: 14px;
+  color: #7bed9f;
+  padding: 0.8rem 1rem;
+}
+
+.file-preview {
+  background: var(--surface-light);
+  border: 0;
+  border-radius: 16px;
+  min-height: 640px;
+  width: 100%;
+}
+
+.training-plan-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.training-plan-category-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.training-plan-category {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.training-plan-category h3 {
+  margin: 0;
+}
+
+.training-plan-row {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.training-plan-main {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.training-plan-actions {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.preview-toggle {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.preview-toggle summary {
+  background: var(--surface-light);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  list-style: none;
+  padding: 0.8rem 1.2rem;
+  width: fit-content;
+}
+
+.preview-toggle summary::-webkit-details-marker {
+  display: none;
+}
+
+.preview-toggle summary:hover {
+  background: var(--primary-dark);
+  color: #1b1008;
+}
+
+.user-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.user-row {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.user-row-main {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.75fr);
+}
+
+.user-row h3,
+.user-row p {
+  margin: 0.25rem 0;
+}
+
+.user-actions {
+  align-content: start;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.password-reset-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.status-ok {
+  color: #7bed9f;
+  font-weight: 700;
+}
+
+.status-danger {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.training-plan-row h4,
+.training-plan-row h3,
+.training-plan-row p {
+  margin: 0.2rem 0;
+}
+
 @media (max-width: 780px) {
   .app-header,
+  .dashboard-overview,
   .hero {
     align-items: flex-start;
     display: grid;
+    grid-template-columns: 1fr;
   }
 
   main {
     padding: 1rem;
+  }
+
+  .training-plan-row {
+    align-items: flex-start;
+    display: grid;
+  }
+
+  .user-row-main {
+    grid-template-columns: 1fr;
   }
 }

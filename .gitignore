@@ -4,6 +4,10 @@ node_modules
 # next.js
 .next
 out
+tsconfig.tsbuildinfo
+
+# IDE files
+.idea
 
 # production
 build

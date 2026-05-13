@@ -39,7 +39,7 @@ export async function loginAction(formData: FormData): Promise<void> {
   const password = getString(formData, "password");
   const user = await findUserByEmail(email);
 
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  if (!user || user.blockedAt || !(await verifyPassword(password, user.passwordHash))) {
     redirect("/login?error=invalid-credentials");
   }
 

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { sessionCookieName, verifySessionToken } from "@/lib/auth/token";
 import { canAccessAdmin } from "@/lib/rbac/roles";
 
-const privateRoutes = ["/dashboard", "/admin"];
+const privateRoutes = ["/dashboard", "/admin", "/training-plans"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -29,5 +29,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/training-plans/:path*"],
 };
