@@ -95,3 +95,11 @@ AUTH_SECRET=<long random secret>
 ```
 
 The app creates the `users` table automatically on first use. Training plan files still use local `.data` storage; use a Render persistent disk for uploaded files if those must survive redeploys too.
+
+Session cookies use HTTPS automatically when the host sends `x-forwarded-proto: https`. If the app is deployed behind an HTTP-only server or a proxy that does not forward this header, set:
+
+```text
+COOKIE_SECURE=false
+```
+
+Use `COOKIE_SECURE=true` for HTTPS deployments where the proxy header is unavailable but browser traffic is HTTPS.

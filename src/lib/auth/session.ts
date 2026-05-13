@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { headers } from "next/headers";
 
 import { canAccessAdmin } from "@/lib/rbac/roles";
 import { findUserById } from "@/lib/db";
@@ -11,6 +12,25 @@ import {
 } from "@/lib/auth/token";
 import type { Role } from "@/lib/rbac/roles";
 
+async function shouldUseSecureCookie(): Promise<boolean> {
+  if (process.env.COOKIE_SECURE === "true") {
+    return true;
+  }
+
+  if (process.env.COOKIE_SECURE === "false") {
+    return false;
+  }
+
+  const headerStore = await headers();
+  const forwardedProto = headerStore.get("x-forwarded-proto");
+
+  if (forwardedProto) {
+    return forwardedProto.split(",")[0]?.trim() === "https";
+  }
+
+  return process.env.NODE_ENV === "production";
+}
+
 export async function setSessionCookie(userId: string, role: Role): Promise<void> {
   const token = await createSessionToken(userId, role);
   const cookieStore = await cookies();
@@ -18,7 +38,7 @@ export async function setSessionCookie(userId: string, role: Role): Promise<void
   cookieStore.set(sessionCookieName, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: await shouldUseSecureCookie(),
     path: "/",
     maxAge: sessionDurationMs / 1000,
   });
