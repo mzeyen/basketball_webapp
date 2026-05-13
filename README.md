@@ -26,6 +26,8 @@ For demo purposes, registering with an `@basketball.local` email creates an admi
 
 Admins can open `/admin` to see existing users, block or unblock accounts, and set a new password for a user.
 
+User accounts are stored in PostgreSQL when `DATABASE_URL` is configured. Without `DATABASE_URL`, the app falls back to the local `.data/users.json` file for development.
+
 ## Training plans
 
 Authenticated users can open `/training-plans` and upload PDF, DOC, and DOCX files up to 25 MB. Training plans are assigned to one of these categories: U10, U12, U14, U16, U19, or Damen. Users can delete their own uploaded plans; admins can delete every plan.
@@ -81,3 +83,12 @@ npm run start
 ```
 
 Do not use the `*:local` scripts on Render because they call PowerShell.
+
+For persistent user accounts on Render, create a Render PostgreSQL database and set these environment variables on the web service:
+
+```text
+DATABASE_URL=<internal PostgreSQL connection string from Render>
+AUTH_SECRET=<long random secret>
+```
+
+The app creates the `users` table automatically on first use. Training plan files still use local `.data` storage; use a Render persistent disk for uploaded files if those must survive redeploys too.
