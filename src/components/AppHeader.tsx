@@ -21,6 +21,7 @@ export function AppHeader({ displayName, email, role }: AppHeaderProps) {
       {email ? (
         <nav>
           <Link href="/dashboard">Dashboard</Link>
+          <Link href="/calendar">Kalender</Link>
           <Link href="/training-plans">Trainingspläne</Link>
           <Link href="/training-exercises">Trainingsübungen</Link>
           {role === "admin" || role === "superadmin" ? <Link href="/admin">Admin</Link> : null}

@@ -105,6 +105,13 @@ export default async function DashboardPage() {
             </a>
           </article>
           <article className="card">
+            <h2>Kalender</h2>
+            <p className="muted">Trainingstermine planen und mit Trainingsplänen verknüpfen.</p>
+            <a href="/calendar" className="secondary-button">
+              Kalender öffnen
+            </a>
+          </article>
+          <article className="card">
             <h2>Trainingspläne</h2>
             <p className="muted">PDF- und Word-Pläne zentral ablegen und für das Team anzeigen.</p>
             <a href="/training-plans" className="secondary-button">

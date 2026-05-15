@@ -421,6 +421,42 @@ textarea {
   text-transform: uppercase;
 }
 
+.calendar-event-form {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.calendar-event-form button,
+.calendar-notes-field {
+  align-self: end;
+}
+
+.calendar-notes-field {
+  grid-column: 1 / -1;
+}
+
+.calendar-event-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.calendar-event-row {
+  align-items: center;
+  background: var(--subtle-background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.calendar-event-row h3,
+.calendar-event-row p {
+  margin: 0.2rem 0;
+}
+
 .section-heading {
   align-items: flex-start;
   display: flex;
@@ -606,6 +642,13 @@ textarea {
   .upload-overview-row {
     align-items: flex-start;
     display: grid;
+  }
+
+  .calendar-event-row,
+  .calendar-event-form {
+    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .section-heading {
