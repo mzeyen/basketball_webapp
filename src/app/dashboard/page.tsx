@@ -5,7 +5,7 @@ import { TeamStandingsWidget } from "@/components/TeamStandingsWidget";
 import { requireUserSession } from "@/lib/auth/session";
 import { listCalendarEvents } from "@/lib/calendar-events";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
-import { getTeamStandings } from "@/lib/team-standings";
+import { getTeamStandings, listTeamStandingConfigs } from "@/lib/team-standings";
 import { getTeamGroupLabel } from "@/lib/teams";
 import { listTrainingExercises } from "@/lib/training-exercises";
 import { listTrainingPlans } from "@/lib/training-plans";
@@ -45,12 +45,13 @@ export default async function DashboardPage() {
     return date;
   });
 
-  const [user, users, trainingPlans, trainingExercises, calendarEvents] = await Promise.all([
+  const [user, users, trainingPlans, trainingExercises, calendarEvents, standingsConfigs] = await Promise.all([
     findUserById(session.userId),
     listUsers(),
     listTrainingPlans(),
     listTrainingExercises(),
     listCalendarEvents({ from: now.toISOString(), to: nextMonth.toISOString() }),
+    listTeamStandingConfigs(),
   ]);
 
   if (!user) {
@@ -58,10 +59,8 @@ export default async function DashboardPage() {
   }
 
   const publicUser = toPublicUser(user);
-  const assignedTeams = publicUser.teams?.length ? publicUser.teams : publicUser.team ? [publicUser.team] : [];
-  const standingsList = assignedTeams.length > 0
-    ? await Promise.all(assignedTeams.map((team) => getTeamStandings(team)))
-    : [await getTeamStandings(null)];
+  const configuredTeams = standingsConfigs.filter((config) => config.leagueId.trim().length > 0).map((config) => config.team);
+  const standingsList = configuredTeams.length > 0 ? await Promise.all(configuredTeams.map((team) => getTeamStandings(team))) : [await getTeamStandings(null)];
   const usersById = new Map(users.map((item) => [item.id, item]));
   const trainingPlansById = new Map(trainingPlans.map((plan) => [plan.id, plan]));
   const upcomingEvents = calendarEvents.slice(0, 4);
@@ -128,11 +127,7 @@ export default async function DashboardPage() {
           </aside>
         </section>
 
-        <section className="stack">
-          {standingsList.map((standings) => (
-            <TeamStandingsWidget standings={standings} key={standings.team ?? "unassigned"} />
-          ))}
-        </section>
+        <TeamStandingsWidget standingsList={standingsList} />
 
         <section className="card stack">
           <div className="section-heading">

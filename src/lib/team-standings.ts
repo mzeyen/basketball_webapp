@@ -14,7 +14,6 @@ export type TeamStandingRow = {
   teamName: string;
   played: number | null;
   wins: number | null;
-  draws: number | null;
   losses: number | null;
   points: string | null;
   scoreFor: number | null;
@@ -277,7 +276,6 @@ function normalizeRows(payload: unknown): TeamStandingRow[] {
         "Unbekannt",
       played: readNumber(row, ["played", "games", "matches", "spiele", "anzahlSpiele", "sp", "anzspiele"]),
       wins: readNumber(row, ["wins", "won", "siege", "gewonnen", "g", "s"]),
-      draws: readNumber(row, ["draws", "ties", "unentschieden", "u"]),
       losses: readNumber(row, ["losses", "lost", "niederlagen", "verloren", "v", "n"]),
       points: readStandingValue(row, ["points", "pts", "punkte", "pkt", "anzGewinnpunkte"]),
       scoreFor: readNumber(row, ["scoreFor", "pointsFor", "for", "scored", "koerbeFuer", "korbfuer", "korbPunktePlus", "koerbe"]),

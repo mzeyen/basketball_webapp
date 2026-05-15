@@ -560,13 +560,33 @@ textarea {
   text-align: right;
 }
 
+.standings-heading {
+  align-items: center;
+}
+
+.standings-controls {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+  justify-content: flex-end;
+}
+
+.standings-position {
+  font-size: 0.9rem;
+}
+
+.standings-pagination {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .standings-table-wrap {
   overflow-x: auto;
 }
 
 .standings-table {
   border-collapse: collapse;
-  min-width: 720px;
+  min-width: 640px;
   width: 100%;
 }
 
@@ -826,6 +846,10 @@ textarea {
 
   .section-heading {
     display: grid;
+  }
+
+  .standings-controls {
+    justify-content: flex-start;
   }
 
   .tag-search-form,
