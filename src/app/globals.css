@@ -457,6 +457,57 @@ textarea {
   margin: 0.2rem 0;
 }
 
+.calendar-widget-days {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-widget-day {
+  background: var(--subtle-background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: grid;
+  gap: 0.2rem;
+  min-height: 5.5rem;
+  padding: 0.75rem;
+}
+
+.calendar-widget-day span,
+.calendar-widget-day small {
+  color: var(--muted);
+}
+
+.calendar-widget-day strong {
+  color: var(--text);
+}
+
+.calendar-widget-day-active {
+  border-color: var(--primary);
+}
+
+.calendar-widget-day-active small {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.calendar-widget-events {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.calendar-widget-event {
+  background: var(--subtle-background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+}
+
+.calendar-widget-event h3,
+.calendar-widget-event p {
+  margin: 0.2rem 0;
+}
+
 .section-heading {
   align-items: flex-start;
   display: flex;
@@ -649,6 +700,10 @@ textarea {
     align-items: flex-start;
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .calendar-widget-days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .section-heading {

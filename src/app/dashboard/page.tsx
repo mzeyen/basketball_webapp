@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import { requireUserSession } from "@/lib/auth/session";
+import { listCalendarEvents } from "@/lib/calendar-events";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
+import { getTeamGroupLabel } from "@/lib/teams";
 import { listTrainingExercises } from "@/lib/training-exercises";
 import { listTrainingPlans } from "@/lib/training-plans";
 
@@ -13,6 +15,18 @@ type RecentUpload = {
   uploadedAt: string;
 };
 
+function formatShortDate(value: Date): string {
+  return value.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+}
+
+function formatWeekday(value: Date): string {
+  return value.toLocaleDateString("de-DE", { weekday: "short" });
+}
+
+function formatTime(value: string): string {
+  return new Date(value).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+}
+
 export default async function DashboardPage() {
   const session = await requireUserSession().catch(() => null);
 
@@ -20,11 +34,21 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [user, users, trainingPlans, trainingExercises] = await Promise.all([
+  const now = new Date();
+  const nextMonth = new Date(now);
+  nextMonth.setDate(now.getDate() + 30);
+  const nextSevenDays = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(now);
+    date.setDate(now.getDate() + index);
+    return date;
+  });
+
+  const [user, users, trainingPlans, trainingExercises, calendarEvents] = await Promise.all([
     findUserById(session.userId),
     listUsers(),
     listTrainingPlans(),
     listTrainingExercises(),
+    listCalendarEvents({ from: now.toISOString(), to: nextMonth.toISOString() }),
   ]);
 
   if (!user) {
@@ -33,6 +57,8 @@ export default async function DashboardPage() {
 
   const publicUser = toPublicUser(user);
   const usersById = new Map(users.map((item) => [item.id, item]));
+  const trainingPlansById = new Map(trainingPlans.map((plan) => [plan.id, plan]));
+  const upcomingEvents = calendarEvents.slice(0, 4);
   const recentUploads: RecentUpload[] = [
     ...trainingPlans.map((plan) => ({
       createdBy: usersById.get(plan.uploadedBy)?.name || usersById.get(plan.uploadedBy)?.email || "Unbekannt",
@@ -94,6 +120,64 @@ export default async function DashboardPage() {
               </div>
             </div>
           </aside>
+        </section>
+
+        <section className="card stack">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Kalender</p>
+              <h2>Nächste Termine</h2>
+            </div>
+            <a href="/calendar" className="secondary-button">
+              Kalender öffnen
+            </a>
+          </div>
+
+          <div className="calendar-widget-days" aria-label="Nächste sieben Tage">
+            {nextSevenDays.map((date) => {
+              const eventCount = calendarEvents.filter((event) => {
+                const eventDate = new Date(event.startsAt);
+                return eventDate.toDateString() === date.toDateString();
+              }).length;
+
+              return (
+                <div className={eventCount > 0 ? "calendar-widget-day calendar-widget-day-active" : "calendar-widget-day"} key={date.toISOString()}>
+                  <span>{formatWeekday(date)}</span>
+                  <strong>{formatShortDate(date)}</strong>
+                  <small>{eventCount > 0 ? `${eventCount} Termin${eventCount === 1 ? "" : "e"}` : "frei"}</small>
+                </div>
+              );
+            })}
+          </div>
+
+          {upcomingEvents.length > 0 ? (
+            <div className="calendar-widget-events">
+              {upcomingEvents.map((event) => {
+                const creator = usersById.get(event.createdBy);
+                const trainingPlan = event.trainingPlanId ? trainingPlansById.get(event.trainingPlanId) : null;
+
+                return (
+                  <article className="calendar-widget-event" key={event.id}>
+                    <div>
+                      <p className="upload-kind">{getTeamGroupLabel(event.team)}</p>
+                      <h3>{event.title}</h3>
+                      <p className="muted">
+                        {new Date(event.startsAt).toLocaleDateString("de-DE")} · {formatTime(event.startsAt)} ·{" "}
+                        {creator?.name || creator?.email || "Unbekannt"}
+                      </p>
+                      {trainingPlan ? (
+                        <a href={`/training-plans/files/${trainingPlan.id}`} target="_blank">
+                          {trainingPlan.title}
+                        </a>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="muted">In den nächsten 30 Tagen sind keine Termine geplant.</p>
+          )}
         </section>
 
         <section className="grid">
