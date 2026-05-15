@@ -47,6 +47,15 @@ export type TeamStandingConfig = {
   leagueId: string;
 };
 
+export type TeamStandingRefreshResult = {
+  failed: Array<{
+    error: string;
+    leagueId: string;
+    team: TeamGroup;
+  }>;
+  refreshed: number;
+};
+
 type ConfigShape = {
   leagueIds: Partial<Record<TeamGroup, string>>;
 };
@@ -117,6 +126,54 @@ export async function updateTeamStandingConfigs(leagueIds: Partial<Record<TeamGr
   await writeConfig({ leagueIds });
 }
 
+async function refreshStandingsForConfig(config: ConfigShape): Promise<TeamStandingRefreshResult> {
+  const sanitizedLeagueIds = sanitizeLeagueIds(config.leagueIds);
+  const cache = await readCache();
+  const fetchedAt = new Date().toISOString();
+  let refreshed = 0;
+  const failed: TeamStandingRefreshResult["failed"] = [];
+
+  await Promise.all(
+    teamGroups.map(async (team) => {
+      const leagueId = sanitizedLeagueIds[team];
+
+      if (!leagueId) {
+        return;
+      }
+
+      const sourceUrl = getApiUrl(leagueId);
+
+      try {
+        const rows = await fetchStandings(sourceUrl);
+        cache.entries[buildCacheKey(team, sourceUrl)] = { fetchedAt, rows };
+        refreshed += 1;
+      } catch (error) {
+        failed.push({
+          error: error instanceof Error ? error.message : "REST request failed",
+          leagueId,
+          team,
+        });
+      }
+    }),
+  );
+
+  await writeCache(cache);
+
+  return { failed, refreshed };
+}
+
+export async function refreshConfiguredTeamStandings(): Promise<TeamStandingRefreshResult> {
+  return refreshStandingsForConfig(await readConfig());
+}
+
+export async function updateTeamStandingConfigsAndRefresh(
+  leagueIds: Partial<Record<TeamGroup, string>>,
+): Promise<TeamStandingRefreshResult> {
+  const config = { leagueIds: sanitizeLeagueIds(leagueIds) };
+  await writeConfig(config);
+  return refreshStandingsForConfig(config);
+}
+
 function readNumber(row: Record<string, unknown>, keys: string[]): number | null {
   for (const key of keys) {
     const value = row[key];
@@ -134,11 +191,18 @@ function readNumber(row: Record<string, unknown>, keys: string[]): number | null
 }
 
 function readText(row: Record<string, unknown>, keys: string[]): string | null {
+  const nestedTeam = row.team && typeof row.team === "object" && !Array.isArray(row.team) ? (row.team as Record<string, unknown>) : null;
+
   for (const key of keys) {
     const value = row[key];
+    const nestedValue = nestedTeam?.[key];
 
     if (typeof value === "string" && value.trim()) {
       return value.trim();
+    }
+
+    if (typeof nestedValue === "string" && nestedValue.trim()) {
+      return nestedValue.trim();
     }
   }
 
@@ -178,15 +242,25 @@ function extractRows(payload: unknown): unknown[] {
     record.table,
     record.rows,
     record.data,
+    record.entries,
     record.items,
     record.content,
     nestedData?.standings,
     nestedData?.table,
     nestedData?.rows,
+    nestedData?.entries,
     nestedData?.items,
+    nestedData?.tabelle,
+    nestedData?.tabelle && typeof nestedData.tabelle === "object" && !Array.isArray(nestedData.tabelle)
+      ? (nestedData.tabelle as Record<string, unknown>).entries
+      : null,
+    record.tabelle && typeof record.tabelle === "object" && !Array.isArray(record.tabelle)
+      ? (record.tabelle as Record<string, unknown>).entries
+      : null,
     nestedResult?.standings,
     nestedResult?.table,
     nestedResult?.rows,
+    nestedResult?.entries,
     nestedResult?.items,
   ];
   const match = candidates.find(Array.isArray);
@@ -198,15 +272,24 @@ function normalizeRows(payload: unknown): TeamStandingRow[] {
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item))
     .map((row, index) => ({
       position: readNumber(row, ["position", "rank", "place", "pos"]) ?? index + 1,
-      teamName: readText(row, ["teamName", "team", "name", "club", "clubName", "mannschaft", "team_name"]) ?? "Unbekannt",
-      played: readNumber(row, ["played", "games", "matches", "spiele", "anzahlSpiele", "sp"]),
-      wins: readNumber(row, ["wins", "won", "siege", "gewonnen", "g"]),
+      teamName:
+        readText(row, ["teamName", "team", "name", "club", "clubName", "mannschaft", "team_name", "teamname", "teamnameSmall"]) ??
+        "Unbekannt",
+      played: readNumber(row, ["played", "games", "matches", "spiele", "anzahlSpiele", "sp", "anzspiele"]),
+      wins: readNumber(row, ["wins", "won", "siege", "gewonnen", "g", "s"]),
       draws: readNumber(row, ["draws", "ties", "unentschieden", "u"]),
-      losses: readNumber(row, ["losses", "lost", "niederlagen", "verloren", "v"]),
-      points: readStandingValue(row, ["points", "pts", "punkte", "pkt"]),
-      scoreFor: readNumber(row, ["scoreFor", "pointsFor", "for", "scored", "koerbeFuer", "korbfuer", "korbPunktePlus"]),
-      scoreAgainst: readNumber(row, ["scoreAgainst", "pointsAgainst", "against", "conceded", "koerbeGegen", "korbgegen", "korbPunkteMinus"]),
-      scoreText: readStandingValue(row, ["score", "scores", "baskets", "basket", "koerbe", "korbverhaeltnis", "korbpunkte"]),
+      losses: readNumber(row, ["losses", "lost", "niederlagen", "verloren", "v", "n"]),
+      points: readStandingValue(row, ["points", "pts", "punkte", "pkt", "anzGewinnpunkte"]),
+      scoreFor: readNumber(row, ["scoreFor", "pointsFor", "for", "scored", "koerbeFuer", "korbfuer", "korbPunktePlus", "koerbe"]),
+      scoreAgainst: readNumber(row, ["scoreAgainst", "pointsAgainst", "against", "conceded", "koerbeGegen", "korbgegen", "korbPunkteMinus", "gegenKoerbe"]),
+      scoreText:
+        readStandingValue(row, ["score", "scores", "baskets", "basket", "koerbe", "korbverhaeltnis", "korbpunkte", "korbdiff"]) ??
+        (() => {
+          const scoreFor = readNumber(row, ["koerbe"]);
+          const scoreAgainst = readNumber(row, ["gegenKoerbe"]);
+
+          return scoreFor !== null && scoreAgainst !== null ? `${scoreFor}:${scoreAgainst}` : null;
+        })(),
     }));
 }
 

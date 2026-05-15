@@ -58,6 +58,10 @@ function getMessage(params: Awaited<AdminPageProps["searchParams"]>): string | n
     return "Tabellen-Liga-IDs wurden gespeichert.";
   }
 
+  if (params.updated === "standings-config-partial") {
+    return "Liga-IDs wurden gespeichert. Einige Tabellen konnten nicht aktualisiert werden; vorhandene gecachte Daten bleiben erhalten.";
+  }
+
   return null;
 }
 
@@ -152,9 +156,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 />
               </label>
             ))}
-            <button type="submit" className="secondary-button">
-              Liga-IDs speichern
-            </button>
+            <div className="standings-config-actions">
+              <button type="submit" className="secondary-button">
+                Liga-IDs speichern
+              </button>
+            </div>
           </form>
         </section>
 

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdminSession } from "@/lib/auth/session";
-import { updateTeamStandingConfigs } from "@/lib/team-standings";
+import { updateTeamStandingConfigsAndRefresh } from "@/lib/team-standings";
 import { teamGroups, type TeamGroup } from "@/lib/teams";
 
 function getString(formData: FormData, key: string): string {
@@ -28,9 +28,9 @@ export async function updateTeamStandingConfigsAction(formData: FormData): Promi
     redirect("/admin?error=invalid-standings-config");
   }
 
-  await updateTeamStandingConfigs(leagueIds);
+  const result = await updateTeamStandingConfigsAndRefresh(leagueIds);
 
   revalidatePath("/admin");
   revalidatePath("/dashboard");
-  redirect("/admin?updated=standings-config");
+  redirect(result.failed.length > 0 ? "/admin?updated=standings-config-partial" : "/admin?updated=standings-config");
 }
