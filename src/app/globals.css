@@ -138,8 +138,51 @@ main {
 }
 
 .brand {
+  font-weight: 800;
+}
+
+.club-brand {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.65rem;
+}
+
+.club-brand-logo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: block;
+  height: 2.5rem;
+  object-fit: contain;
+  padding: 0.25rem;
+  width: 2.5rem;
+}
+
+.club-brand-name {
   font-size: 1.2rem;
   font-weight: 800;
+}
+
+.club-brand-large .club-brand-logo {
+  border-radius: 18px;
+  height: 4.5rem;
+  width: 4.5rem;
+}
+
+.club-brand-large .club-brand-name {
+  font-size: 1.6rem;
+}
+
+.hero-brand {
+  margin-bottom: 1.5rem;
+}
+
+.hero-actions {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+  padding: 1.5rem 0;
 }
 
 .user-badge {

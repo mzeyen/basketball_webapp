@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ClubBrand } from "@/components/ClubBrand";
 import { logoutAction } from "@/lib/auth/actions";
 import type { Role } from "@/lib/rbac/roles";
 
@@ -15,22 +16,22 @@ export function AppHeader({ displayName, email, role }: AppHeaderProps) {
 
   return (
     <header className="app-header">
-      <Link href="/" className="brand">
-        🏀 CourtControl
+      <Link href="/" className="brand" aria-label="Startseite">
+        <ClubBrand />
       </Link>
       {email ? (
         <nav>
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/calendar">Kalender</Link>
-          <Link href="/training-plans">Trainingspläne</Link>
-          <Link href="/training-exercises">Trainingsübungen</Link>
+          <Link href="/training-plans">Trainingsplaene</Link>
+          <Link href="/training-exercises">Trainingsuebungen</Link>
           {role === "admin" || role === "superadmin" ? <Link href="/admin">Admin</Link> : null}
         </nav>
       ) : null}
       <div className="app-header-actions">
         {email ? (
           <form action={logoutAction}>
-            <Link href="/profile" className="user-badge" aria-label="Profil öffnen">
+            <Link href="/profile" className="user-badge" aria-label="Profil oeffnen">
               <span className="user-badge-icon" aria-hidden="true">
                 {roleInitial}
               </span>

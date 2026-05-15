@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { AppHeader } from "@/components/AppHeader";
+import { ClubBrand } from "@/components/ClubBrand";
 import { getCurrentSession } from "@/lib/auth/session";
+import { appBranding } from "@/lib/branding";
 import { findUserById, toPublicUser } from "@/lib/db";
 
 export default async function HomePage() {
@@ -15,19 +17,18 @@ export default async function HomePage() {
       <main>
         <section className="hero hero-single">
           <div>
+            <ClubBrand className="hero-brand" size="large" />
             <p className="eyebrow">Team, Training, Taktik</p>
-            <h1>Verwalte dein Basketball-Team sicher an einem Ort.</h1>
-            <p className="muted">
-              CourtControl bündelt Trainingspläne, geschützte Team-Bereiche und Rollenverwaltung für deinen Verein.
-            </p>
+            <h1>{appBranding.heroTitle}</h1>
+            <p className="muted">{appBranding.heroText}</p>
             {publicUser ? (
-              <div className="app-header" style={{ padding: "1.5rem 0", justifyContent: "flex-start" }}>
+              <div className="hero-actions">
                 <Link href="/dashboard" className="secondary-button">
-                  Dashboard öffnen
+                  Dashboard oeffnen
                 </Link>
               </div>
             ) : (
-              <div className="app-header" style={{ padding: "1.5rem 0", justifyContent: "flex-start" }}>
+              <div className="hero-actions">
                 <Link href="/register" className="secondary-button">
                   Konto erstellen
                 </Link>
