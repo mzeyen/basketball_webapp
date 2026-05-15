@@ -6,12 +6,16 @@ import { redirect } from "next/navigation";
 import { hashPassword } from "@/lib/auth/password";
 import { requireAdminSession } from "@/lib/auth/session";
 import { appendAuditLogEntry, getRoleLabel } from "@/lib/audit-log";
-import { deleteUser, findUserByEmail, findUserById, setUserBlocked, updateUserEmail, updateUserPassword, updateUserRole, updateUserTeam } from "@/lib/db";
+import { deleteUser, findUserByEmail, findUserById, setUserBlocked, updateUserEmail, updateUserPassword, updateUserRole, updateUserTeams } from "@/lib/db";
 import { canAccessSuperAdmin, isRole, type Role } from "@/lib/rbac/roles";
-import { getTeamGroupLabel, isTeamGroup } from "@/lib/teams";
+import { getTeamGroupLabels, normalizeTeamGroups } from "@/lib/teams";
 
 function getString(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
+}
+
+function getStrings(formData: FormData, key: string): string[] {
+  return formData.getAll(key).map((value) => String(value).trim()).filter(Boolean);
 }
 
 export async function blockUserAction(formData: FormData): Promise<void> {
@@ -259,7 +263,7 @@ export async function updateUserTeamAction(formData: FormData): Promise<void> {
   }
 
   const userId = getString(formData, "userId");
-  const teamValue = getString(formData, "team");
+  const teamValues = getStrings(formData, "teams");
 
   if (!userId) {
     redirect("/admin?error=invalid-user-action");
@@ -272,13 +276,14 @@ export async function updateUserTeamAction(formData: FormData): Promise<void> {
     redirect("/admin?error=invalid-user-action");
   }
 
-  const nextTeam = isTeamGroup(teamValue) ? teamValue : null;
-  await updateUserTeam(user.id, nextTeam);
+  const previousTeams = user.teams ?? (user.team ? [user.team] : []);
+  const nextTeams = normalizeTeamGroups(teamValues);
+  await updateUserTeams(user.id, nextTeams);
   await appendAuditLogEntry({
     action: "change-team",
     actorEmail: actor.email,
     actorId: actor.id,
-    details: `Team geändert: ${getTeamGroupLabel(user.team)} -> ${getTeamGroupLabel(nextTeam)}.`,
+    details: `Team geändert: ${getTeamGroupLabels(previousTeams)} -> ${getTeamGroupLabels(nextTeams)}.`,
     targetEmail: user.email,
     targetId: user.id,
   });

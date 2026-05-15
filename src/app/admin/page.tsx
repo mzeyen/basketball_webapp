@@ -14,7 +14,7 @@ import { getRoleLabel, listAuditLogEntries } from "@/lib/audit-log";
 import { requireAdminSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { canAccessSuperAdmin } from "@/lib/rbac/roles";
-import { getTeamGroupLabel, teamGroups } from "@/lib/teams";
+import { getTeamGroupLabel, getTeamGroupLabels, teamGroups } from "@/lib/teams";
 
 type AdminPageProps = {
   searchParams: Promise<{
@@ -119,6 +119,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             {users.map((item) => {
               const isCurrentUser = item.id === session.userId;
               const isBlocked = Boolean(item.blockedAt);
+              const assignedTeams = item.teams ?? (item.team ? [item.team] : []);
 
               return (
                 <article className="user-row" key={item.id}>
@@ -126,7 +127,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     <div>
                       <h3>{item.email}</h3>
                       <p className="muted">
-                        {getRoleLabel(item.role)} · {getTeamGroupLabel(item.team)} · Erstellt{" "}
+                        {getRoleLabel(item.role)} · {getTeamGroupLabels(assignedTeams)} · Erstellt{" "}
                         {new Date(item.createdAt).toLocaleString("de-DE")}
                       </p>
                       <p className={isBlocked ? "status-danger" : "status-ok"}>
@@ -159,9 +160,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         <form action={updateUserTeamAction} className="team-update-form">
                           <input type="hidden" name="userId" value={item.id} />
                           <label>
-                            Team
-                            <select name="team" defaultValue={item.team ?? ""}>
-                              <option value="">Kein Team</option>
+                            Teams
+                            <select name="teams" multiple size={teamGroups.length} defaultValue={assignedTeams}>
                               {teamGroups.map((team) => (
                                 <option key={team} value={team}>
                                   {getTeamGroupLabel(team)}
@@ -169,8 +169,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                               ))}
                             </select>
                           </label>
+                          <p className="muted team-multi-help">Mit Strg mehrere Teams markieren.</p>
                           <button type="submit" className="secondary-button">
-                            Team speichern
+                            Teams speichern
                           </button>
                         </form>
                       ) : null}

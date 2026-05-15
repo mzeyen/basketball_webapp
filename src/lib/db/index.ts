@@ -4,7 +4,7 @@ import { Pool, type QueryResultRow } from "pg";
 
 import { createUserRecord, type NewUserInput, type User } from "@/lib/db/user";
 import type { Role } from "@/lib/rbac/roles";
-import { isTeamGroup, type TeamGroup } from "@/lib/teams";
+import { isTeamGroup, normalizeTeamGroups, type TeamGroup } from "@/lib/teams";
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const usersFile = path.join(dataDirectory, "users.json");
@@ -38,12 +38,14 @@ function getPool(): Pool {
 function toUser(row: QueryResultRow): User {
   const email = String(row.email);
   const role = email === "admin@basketball.local" ? "superadmin" : row.role === "superadmin" || row.role === "admin" ? row.role : "user";
+  const teams = parseUserTeams(row);
 
   return {
     id: String(row.id),
     email,
     name: row.name ? String(row.name) : null,
-    team: row.team && isTeamGroup(String(row.team)) ? String(row.team) as TeamGroup : null,
+    team: teams[0] ?? (row.team && isTeamGroup(String(row.team)) ? String(row.team) as TeamGroup : null),
+    teams,
     passwordHash: String(row.password_hash),
     role,
     emailVerifiedAt: row.email_verified_at ? new Date(row.email_verified_at).toISOString() : null,
@@ -58,6 +60,22 @@ function toUser(row: QueryResultRow): User {
   };
 }
 
+function parseUserTeams(row: QueryResultRow): TeamGroup[] {
+  if (Array.isArray(row.teams)) {
+    return normalizeTeamGroups(row.teams);
+  }
+
+  if (typeof row.teams === "string" && row.teams.trim()) {
+    try {
+      return normalizeTeamGroups(JSON.parse(row.teams));
+    } catch {
+      return normalizeTeamGroups(row.teams.split(","));
+    }
+  }
+
+  return row.team && isTeamGroup(String(row.team)) ? [String(row.team) as TeamGroup] : [];
+}
+
 async function ensureDatabase(): Promise<void> {
   if (initialized) {
     return;
@@ -69,6 +87,7 @@ async function ensureDatabase(): Promise<void> {
       email TEXT NOT NULL UNIQUE,
       name TEXT NULL,
       team TEXT NULL,
+      teams TEXT NULL,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'user')),
       email_verified_at TIMESTAMPTZ NULL,
@@ -83,6 +102,8 @@ async function ensureDatabase(): Promise<void> {
 
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT NULL");
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS team TEXT NULL");
+  await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS teams TEXT NULL");
+  await getPool().query("UPDATE users SET teams = json_build_array(team)::text WHERE (teams IS NULL OR teams = '') AND team IS NOT NULL");
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token TEXT NULL");
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token_expires_at TIMESTAMPTZ NULL");
   await getPool().query(`
@@ -172,6 +193,7 @@ export async function createUser(input: NewUserInput): Promise<User> {
           email,
           name,
           team,
+          teams,
           password_hash,
           role,
           email_verified_at,
@@ -182,13 +204,14 @@ export async function createUser(input: NewUserInput): Promise<User> {
           created_at,
           updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       `,
       [
         user.id,
         user.email,
         user.name ?? null,
         user.team ?? null,
+        JSON.stringify(user.teams ?? []),
         user.passwordHash,
         user.role,
         user.emailVerifiedAt,
@@ -375,6 +398,13 @@ export async function updateUserEmail(userId: string, email: string): Promise<Us
 }
 
 export async function updateUserTeam(userId: string, team: TeamGroup | null): Promise<User | null> {
+  return updateUserTeams(userId, team ? [team] : []);
+}
+
+export async function updateUserTeams(userId: string, teams: TeamGroup[]): Promise<User | null> {
+  const normalizedTeams = normalizeTeamGroups(teams);
+  const primaryTeam = normalizedTeams[0] ?? null;
+
   if (hasDatabaseUrl()) {
     await ensureDatabase();
     const now = new Date().toISOString();
@@ -382,11 +412,12 @@ export async function updateUserTeam(userId: string, team: TeamGroup | null): Pr
       `
         UPDATE users
         SET team = $1,
-            updated_at = $2
-        WHERE id = $3
+            teams = $2,
+            updated_at = $3
+        WHERE id = $4
         RETURNING *
       `,
-      [team, now, userId],
+      [primaryTeam, JSON.stringify(normalizedTeams), now, userId],
     );
 
     return result.rows[0] ? toUser(result.rows[0]) : null;
@@ -399,7 +430,8 @@ export async function updateUserTeam(userId: string, team: TeamGroup | null): Pr
     return null;
   }
 
-  user.team = team;
+  user.team = primaryTeam;
+  user.teams = normalizedTeams;
   user.updatedAt = new Date().toISOString();
   await writeDatabase(database);
 

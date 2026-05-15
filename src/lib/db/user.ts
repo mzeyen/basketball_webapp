@@ -8,6 +8,7 @@ export type User = {
   email: string;
   name?: string | null;
   team?: TeamGroup | null;
+  teams?: TeamGroup[];
   passwordHash: string;
   role: Role;
   emailVerifiedAt: string | null;
@@ -26,6 +27,7 @@ export type NewUserInput = {
   passwordHash: string;
   name?: string | null;
   team?: TeamGroup | null;
+  teams?: TeamGroup[];
   role?: Role;
   emailVerificationToken?: string | null;
   emailVerificationTokenExpiresAt?: string | null;
@@ -38,7 +40,8 @@ export function createUserRecord(input: NewUserInput): User {
     id: randomUUID(),
     email: input.email.toLowerCase(),
     name: input.name?.trim() || null,
-    team: input.team ?? null,
+    team: input.team ?? input.teams?.[0] ?? null,
+    teams: input.teams ?? (input.team ? [input.team] : []),
     passwordHash: input.passwordHash,
     role: input.role ?? "user",
     emailVerifiedAt: null,

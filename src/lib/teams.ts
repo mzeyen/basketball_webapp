@@ -6,6 +6,11 @@ export function isTeamGroup(value: string): value is TeamGroup {
   return teamGroups.includes(value as TeamGroup);
 }
 
+export function normalizeTeamGroups(values: unknown): TeamGroup[] {
+  const rawValues = Array.isArray(values) ? values : typeof values === "string" ? [values] : [];
+  return [...new Set(rawValues.map(String).filter(isTeamGroup))];
+}
+
 export function getTeamGroupLabel(team: TeamGroup | null | undefined): string {
   const labels: Record<TeamGroup, string> = {
     u10: "U10",
@@ -18,4 +23,12 @@ export function getTeamGroupLabel(team: TeamGroup | null | undefined): string {
   };
 
   return team ? labels[team] : "Kein Team";
+}
+
+export function getTeamGroupLabels(teams: TeamGroup[] | null | undefined): string {
+  if (!teams?.length) {
+    return "Kein Team";
+  }
+
+  return teams.map(getTeamGroupLabel).join(", ");
 }

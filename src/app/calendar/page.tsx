@@ -140,7 +140,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
             </label>
             <label>
               Team
-              <select name="team" defaultValue={publicUser.team ?? ""}>
+              <select name="team" defaultValue={publicUser.teams?.[0] ?? publicUser.team ?? ""}>
                 <option value="">Kein Team</option>
                 {teamGroups.map((team) => (
                   <option key={team} value={team}>
