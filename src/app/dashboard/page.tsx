@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
+import { TeamStandingsWidget } from "@/components/TeamStandingsWidget";
 import { requireUserSession } from "@/lib/auth/session";
 import { listCalendarEvents } from "@/lib/calendar-events";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
+import { getTeamStandings } from "@/lib/team-standings";
 import { getTeamGroupLabel } from "@/lib/teams";
 import { listTrainingExercises } from "@/lib/training-exercises";
 import { listTrainingPlans } from "@/lib/training-plans";
@@ -56,6 +58,10 @@ export default async function DashboardPage() {
   }
 
   const publicUser = toPublicUser(user);
+  const assignedTeams = publicUser.teams?.length ? publicUser.teams : publicUser.team ? [publicUser.team] : [];
+  const standingsList = assignedTeams.length > 0
+    ? await Promise.all(assignedTeams.map((team) => getTeamStandings(team)))
+    : [await getTeamStandings(null)];
   const usersById = new Map(users.map((item) => [item.id, item]));
   const trainingPlansById = new Map(trainingPlans.map((plan) => [plan.id, plan]));
   const upcomingEvents = calendarEvents.slice(0, 4);
@@ -120,6 +126,12 @@ export default async function DashboardPage() {
               </div>
             </div>
           </aside>
+        </section>
+
+        <section className="stack">
+          {standingsList.map((standings) => (
+            <TeamStandingsWidget standings={standings} key={standings.team ?? "unassigned"} />
+          ))}
         </section>
 
         <section className="card stack">

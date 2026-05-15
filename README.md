@@ -39,6 +39,18 @@ Uploaded files and metadata are stored locally under `.data`, which is ignored b
 
 PDF files can be previewed directly in the app. Word files are served through the protected file route and opened or downloaded by the browser.
 
+## Team standings widget
+
+The dashboard can show the current standings for every team assigned to the signed-in user. Admins maintain the Basketball Bund league IDs for the Thuringia teams in `/admin`. The app then calls:
+
+```text
+https://www.basketball-bund.net/rest/competition/table/id/<ID>
+```
+
+Standings are cached persistently in `.data/team-standings-cache.json` and refreshed at most once every 48 hours. If the REST source is unavailable, the widget keeps showing the last cached data. The league ID mapping is stored in `.data/team-standings-config.json`.
+
+The REST response can be an array or an object with `standings`, `table`, `rows`, `data`, or `items`. Supported row fields include `position`, `teamName`, `played`, `wins`, `draws`, `losses`, `points`, `scoreFor`, and `scoreAgainst`.
+
 ## Development
 
 On this Windows/PowerShell setup, use `npm.cmd` instead of `npm` because PowerShell may block the `npm.ps1` shim.

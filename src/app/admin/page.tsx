@@ -10,10 +10,12 @@ import {
   updateUserRoleAction,
   updateUserTeamAction,
 } from "@/lib/admin/user-actions";
+import { updateTeamStandingConfigsAction } from "@/lib/admin/standings-actions";
 import { getRoleLabel, listAuditLogEntries } from "@/lib/audit-log";
 import { requireAdminSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { canAccessSuperAdmin } from "@/lib/rbac/roles";
+import { listTeamStandingConfigs } from "@/lib/team-standings";
 import { getTeamGroupLabel, getTeamGroupLabels, teamGroups } from "@/lib/teams";
 
 type AdminPageProps = {
@@ -52,6 +54,10 @@ function getMessage(params: Awaited<AdminPageProps["searchParams"]>): string | n
     return "Team wurde geändert.";
   }
 
+  if (params.updated === "standings-config") {
+    return "Tabellen-Liga-IDs wurden gespeichert.";
+  }
+
   return null;
 }
 
@@ -76,6 +82,10 @@ function getError(params: Awaited<AdminPageProps["searchParams"]>): string | nul
     return "Zum Löschen muss die Bestätigung exakt „löschen“ lauten.";
   }
 
+  if (params.error === "invalid-standings-config") {
+    return "Liga-IDs duerfen nur aus Zahlen bestehen.";
+  }
+
   return null;
 }
 
@@ -86,7 +96,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     redirect("/dashboard");
   }
 
-  const [user, users, params] = await Promise.all([findUserById(session.userId), listUsers(), searchParams]);
+  const [user, users, standingsConfigs, params] = await Promise.all([
+    findUserById(session.userId),
+    listUsers(),
+    listTeamStandingConfigs(),
+    searchParams,
+  ]);
 
   if (!user) {
     redirect("/login");
@@ -112,6 +127,36 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
         {message ? <p className="form-success">{message}</p> : null}
         {error ? <p className="form-error">{error}</p> : null}
+
+        <section className="card stack">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Thueringen</p>
+              <h2>Tabellen-Liga-IDs</h2>
+              <p className="muted">
+                Speichere pro Team die Liga-ID aus basketball-bund.net. Die App ruft Tabellen ueber{" "}
+                <code>https://www.basketball-bund.net/rest/competition/table/id/&lt;ID&gt;</code> ab und cached sie 48 Stunden.
+              </p>
+            </div>
+          </div>
+          <form action={updateTeamStandingConfigsAction} className="standings-config-form">
+            {standingsConfigs.map((config) => (
+              <label key={config.team}>
+                {getTeamGroupLabel(config.team)}
+                <input
+                  name={`leagueId-${config.team}`}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Liga-ID"
+                  defaultValue={config.leagueId}
+                />
+              </label>
+            ))}
+            <button type="submit" className="secondary-button">
+              Liga-IDs speichern
+            </button>
+          </form>
+        </section>
 
         <section className="card stack">
           <h2>Existierende Nutzer</h2>
