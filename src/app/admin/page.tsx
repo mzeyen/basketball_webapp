@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
-import { blockUserAction, resetUserPasswordAction, unblockUserAction } from "@/lib/admin/user-actions";
+import { blockUserAction, resetUserPasswordAction, unblockUserAction, updateUserRoleAction } from "@/lib/admin/user-actions";
+import { getRoleLabel, listAuditLogEntries } from "@/lib/audit-log";
 import { requireAdminSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
+import { canAccessSuperAdmin } from "@/lib/rbac/roles";
 
 type AdminPageProps = {
   searchParams: Promise<{
@@ -23,6 +25,10 @@ function getMessage(params: Awaited<AdminPageProps["searchParams"]>): string | n
 
   if (params.updated === "password-reset") {
     return "Passwort wurde zurückgesetzt.";
+  }
+
+  if (params.updated === "role") {
+    return "Rolle wurde geändert.";
   }
 
   return null;
@@ -54,12 +60,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   }
 
   const publicUser = toPublicUser(user);
+  const canViewAuditLog = canAccessSuperAdmin(publicUser.role);
+  const auditLogEntries = canViewAuditLog ? await listAuditLogEntries() : [];
   const message = getMessage(params);
   const error = getError(params);
 
   return (
     <>
-      <AppHeader email={publicUser.email} role={publicUser.role} />
+      <AppHeader displayName={publicUser.name} email={publicUser.email} role={publicUser.role} />
       <main className="stack">
         <section className="card">
           <p className="eyebrow">Admin</p>
@@ -85,7 +93,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     <div>
                       <h3>{item.email}</h3>
                       <p className="muted">
-                        {item.role} · Erstellt {new Date(item.createdAt).toLocaleString("de-DE")}
+                        {getRoleLabel(item.role)} · Erstellt {new Date(item.createdAt).toLocaleString("de-DE")}
                       </p>
                       <p className={isBlocked ? "status-danger" : "status-ok"}>
                         {isBlocked
@@ -100,6 +108,22 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     </div>
 
                     <div className="user-actions">
+                      {item.role !== "superadmin" && !isCurrentUser ? (
+                        <form action={updateUserRoleAction} className="role-update-form">
+                          <input type="hidden" name="userId" value={item.id} />
+                          <label>
+                            Rolle
+                            <select name="role" defaultValue={item.role}>
+                              <option value="user">Nutzer</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </label>
+                          <button type="submit" className="secondary-button">
+                            Rolle speichern
+                          </button>
+                        </form>
+                      ) : null}
+
                       {isBlocked ? (
                         <form action={unblockUserAction}>
                           <input type="hidden" name="userId" value={item.id} />
@@ -131,6 +155,28 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             })}
           </div>
         </section>
+
+        {canViewAuditLog ? (
+          <section className="card stack">
+            <h2>Änderungsprotokoll</h2>
+            {auditLogEntries.length > 0 ? (
+              <div className="audit-log-list">
+                {auditLogEntries.map((entry) => (
+                  <article className="audit-log-row" key={entry.id}>
+                    <div>
+                      <h3>{entry.details}</h3>
+                      <p className="muted">
+                        {entry.actorEmail} {"->"} {entry.targetEmail} · {new Date(entry.createdAt).toLocaleString("de-DE")}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="muted">Noch keine protokollierten Änderungen.</p>
+            )}
+          </section>
+        ) : null}
       </main>
     </>
   );

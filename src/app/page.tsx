@@ -11,7 +11,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <AppHeader email={publicUser?.email} role={publicUser?.role} />
+      <AppHeader displayName={publicUser?.name} email={publicUser?.email} role={publicUser?.role} />
       <main>
         <section className="hero hero-single">
           <div>

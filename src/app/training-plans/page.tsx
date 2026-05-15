@@ -11,6 +11,7 @@ import {
   trainingPlanCategories,
   type TrainingPlanCategory,
 } from "@/lib/training-plans";
+import { canAccessAdmin } from "@/lib/rbac/roles";
 
 type TrainingPlansPageProps = {
   searchParams: Promise<{
@@ -82,7 +83,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
 
   return (
     <>
-      <AppHeader email={publicUser.email} role={publicUser.role} />
+      <AppHeader displayName={publicUser.name} email={publicUser.email} role={publicUser.role} />
       <main className="stack">
         <section className="card">
           <p className="eyebrow">Training</p>
@@ -159,7 +160,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
                             <p className="muted">{plan.originalFileName}</p>
                           </div>
                           <div className="training-plan-actions">
-                            {publicUser.role === "admin" || plan.uploadedBy === publicUser.id ? (
+                            {canAccessAdmin(publicUser.role) || plan.uploadedBy === publicUser.id ? (
                               <form action={deleteTrainingPlanAction}>
                                 <input type="hidden" name="planId" value={plan.id} />
                                 <button type="submit" className="danger-button">

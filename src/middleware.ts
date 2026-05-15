@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { sessionCookieName, verifySessionToken } from "@/lib/auth/token";
-import { canAccessAdmin } from "@/lib/rbac/roles";
 
-const privateRoutes = ["/dashboard", "/admin", "/training-plans"];
+const privateRoutes = ["/dashboard", "/profile", "/admin", "/training-plans", "/training-exercises"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -21,13 +20,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname.startsWith("/admin") && !canAccessAdmin(session.role)) {
-    return NextResponse.redirect(new URL("/dashboard?error=forbidden", request.url));
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/training-plans/:path*"],
+  matcher: ["/dashboard/:path*", "/profile/:path*", "/admin/:path*", "/training-plans/:path*", "/training-exercises/:path*"],
 };

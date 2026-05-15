@@ -16,8 +16,9 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
         action={registerAction}
         title="Konto erstellen"
         submitLabel="Registrieren"
-        helperText="Erstelle ein Benutzerkonto mit sicher gehashtem Passwort."
+        helperText="Erstelle ein Benutzerkonto und bestätige danach deine E-Mail-Adresse."
         error={error}
+        mode="register"
       />
       <p className="muted" style={{ textAlign: "center" }}>
         Schon registriert? <Link href="/login">Zur Anmeldung</Link>

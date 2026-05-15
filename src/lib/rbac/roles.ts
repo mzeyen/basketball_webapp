@@ -1,4 +1,4 @@
-export const roles = ["admin", "user"] as const;
+export const roles = ["superadmin", "admin", "user"] as const;
 
 export type Role = (typeof roles)[number];
 
@@ -7,5 +7,9 @@ export function isRole(value: unknown): value is Role {
 }
 
 export function canAccessAdmin(role: Role): boolean {
-  return role === "admin";
+  return role === "admin" || role === "superadmin";
+}
+
+export function canAccessSuperAdmin(role: Role): boolean {
+  return role === "superadmin";
 }

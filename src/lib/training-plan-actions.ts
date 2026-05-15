@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUserSession } from "@/lib/auth/session";
+import { canAccessAdmin } from "@/lib/rbac/roles";
 import {
   createTrainingPlan,
   deleteTrainingPlan,
@@ -64,7 +65,7 @@ export async function deleteTrainingPlanAction(formData: FormData): Promise<void
     redirect("/training-plans?error=invalid-delete");
   }
 
-  const canDelete = session.role === "admin" || plan.uploadedBy === session.userId;
+  const canDelete = canAccessAdmin(session.role) || plan.uploadedBy === session.userId;
 
   if (!canDelete) {
     redirect("/training-plans?error=forbidden-delete");

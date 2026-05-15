@@ -3,6 +3,7 @@ import path from "path";
 import { Pool, type QueryResultRow } from "pg";
 
 import { createUserRecord, type NewUserInput, type User } from "@/lib/db/user";
+import type { Role } from "@/lib/rbac/roles";
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const usersFile = path.join(dataDirectory, "users.json");
@@ -34,12 +35,20 @@ function getPool(): Pool {
 }
 
 function toUser(row: QueryResultRow): User {
+  const email = String(row.email);
+  const role = email === "admin@basketball.local" ? "superadmin" : row.role === "superadmin" || row.role === "admin" ? row.role : "user";
+
   return {
     id: String(row.id),
-    email: String(row.email),
+    email,
+    name: row.name ? String(row.name) : null,
     passwordHash: String(row.password_hash),
-    role: row.role === "admin" ? "admin" : "user",
+    role,
     emailVerifiedAt: row.email_verified_at ? new Date(row.email_verified_at).toISOString() : null,
+    emailVerificationToken: row.email_verification_token ? String(row.email_verification_token) : null,
+    emailVerificationTokenExpiresAt: row.email_verification_token_expires_at
+      ? new Date(row.email_verification_token_expires_at).toISOString()
+      : null,
     blockedAt: row.blocked_at ? new Date(row.blocked_at).toISOString() : null,
     passwordResetAt: row.password_reset_at ? new Date(row.password_reset_at).toISOString() : null,
     createdAt: new Date(row.created_at).toISOString(),
@@ -56,15 +65,25 @@ async function ensureDatabase(): Promise<void> {
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
+      name TEXT NULL,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
+      role TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'user')),
       email_verified_at TIMESTAMPTZ NULL,
+      email_verification_token TEXT NULL,
+      email_verification_token_expires_at TIMESTAMPTZ NULL,
       blocked_at TIMESTAMPTZ NULL,
       password_reset_at TIMESTAMPTZ NULL,
       created_at TIMESTAMPTZ NOT NULL,
       updated_at TIMESTAMPTZ NOT NULL
     )
   `);
+
+  await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT NULL");
+  await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token TEXT NULL");
+  await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token_expires_at TIMESTAMPTZ NULL");
+  await getPool().query("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
+  await getPool().query("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('superadmin', 'admin', 'user'))");
+  await getPool().query("UPDATE users SET role = 'superadmin' WHERE email = 'admin@basketball.local'");
 
   initialized = true;
 }
@@ -95,7 +114,8 @@ export async function findUserByEmail(email: string): Promise<User | null> {
   }
 
   const database = await readDatabase();
-  return database.users.find((user) => user.email === email.toLowerCase()) ?? null;
+  const user = database.users.find((item) => item.email === email.toLowerCase()) ?? null;
+  return user ? normalizeUserRole(user) : null;
 }
 
 export async function findUserById(id: string): Promise<User | null> {
@@ -106,7 +126,8 @@ export async function findUserById(id: string): Promise<User | null> {
   }
 
   const database = await readDatabase();
-  return database.users.find((user) => user.id === id) ?? null;
+  const user = database.users.find((item) => item.id === id) ?? null;
+  return user ? normalizeUserRole(user) : null;
 }
 
 export async function listUsers(): Promise<User[]> {
@@ -117,7 +138,7 @@ export async function listUsers(): Promise<User[]> {
   }
 
   const database = await readDatabase();
-  return [...database.users].sort(
+  return database.users.map(normalizeUserRole).sort(
     (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
   );
 }
@@ -132,22 +153,28 @@ export async function createUser(input: NewUserInput): Promise<User> {
         INSERT INTO users (
           id,
           email,
+          name,
           password_hash,
           role,
           email_verified_at,
+          email_verification_token,
+          email_verification_token_expires_at,
           blocked_at,
           password_reset_at,
           created_at,
           updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       `,
       [
         user.id,
         user.email,
+        user.name ?? null,
         user.passwordHash,
         user.role,
         user.emailVerifiedAt,
+        user.emailVerificationToken ?? null,
+        user.emailVerificationTokenExpiresAt ?? null,
         user.blockedAt ?? null,
         user.passwordResetAt ?? null,
         user.createdAt,
@@ -160,6 +187,129 @@ export async function createUser(input: NewUserInput): Promise<User> {
 
   const database = await readDatabase();
   database.users.push(user);
+  await writeDatabase(database);
+
+  return user;
+}
+
+function normalizeUserRole(user: User): User {
+  if (user.email === "admin@basketball.local" && user.role !== "superadmin") {
+    return { ...user, role: "superadmin" };
+  }
+
+  return user;
+}
+
+export async function findUserByEmailVerificationToken(token: string): Promise<User | null> {
+  if (hasDatabaseUrl()) {
+    await ensureDatabase();
+    const result = await getPool().query("SELECT * FROM users WHERE email_verification_token = $1 LIMIT 1", [token]);
+    return result.rows[0] ? toUser(result.rows[0]) : null;
+  }
+
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.emailVerificationToken === token) ?? null;
+  return user ? normalizeUserRole(user) : null;
+}
+
+export async function verifyUserEmail(userId: string): Promise<User | null> {
+  if (hasDatabaseUrl()) {
+    await ensureDatabase();
+    const now = new Date().toISOString();
+    const result = await getPool().query(
+      `
+        UPDATE users
+        SET email_verified_at = $1,
+            email_verification_token = NULL,
+            email_verification_token_expires_at = NULL,
+            updated_at = $1
+        WHERE id = $2
+        RETURNING *
+      `,
+      [now, userId],
+    );
+
+    return result.rows[0] ? toUser(result.rows[0]) : null;
+  }
+
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.id === userId);
+
+  if (!user) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+  user.emailVerifiedAt = now;
+  user.emailVerificationToken = null;
+  user.emailVerificationTokenExpiresAt = null;
+  user.updatedAt = now;
+  await writeDatabase(database);
+
+  return normalizeUserRole(user);
+}
+
+export async function updateUserRole(userId: string, role: Role): Promise<User | null> {
+  if (hasDatabaseUrl()) {
+    await ensureDatabase();
+    const now = new Date().toISOString();
+    const result = await getPool().query(
+      `
+        UPDATE users
+        SET role = $1,
+            updated_at = $2
+        WHERE id = $3
+        RETURNING *
+      `,
+      [role, now, userId],
+    );
+
+    return result.rows[0] ? toUser(result.rows[0]) : null;
+  }
+
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.id === userId);
+
+  if (!user) {
+    return null;
+  }
+
+  user.role = role;
+  user.updatedAt = new Date().toISOString();
+  await writeDatabase(database);
+
+  return normalizeUserRole(user);
+}
+
+export async function updateUserName(userId: string, name: string | null): Promise<User | null> {
+  const normalizedName = name?.trim() ? name.trim() : null;
+
+  if (hasDatabaseUrl()) {
+    await ensureDatabase();
+    const now = new Date().toISOString();
+    const result = await getPool().query(
+      `
+        UPDATE users
+        SET name = $1,
+            updated_at = $2
+        WHERE id = $3
+        RETURNING *
+      `,
+      [normalizedName, now, userId],
+    );
+
+    return result.rows[0] ? toUser(result.rows[0]) : null;
+  }
+
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.id === userId);
+
+  if (!user) {
+    return null;
+  }
+
+  user.name = normalizedName;
+  user.updatedAt = new Date().toISOString();
   await writeDatabase(database);
 
   return user;
