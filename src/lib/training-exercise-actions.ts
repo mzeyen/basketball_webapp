@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireUserSession } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/rbac/roles";
+import { isTeamGroup } from "@/lib/teams";
 import {
   createTrainingExercise,
   deleteTrainingExercise,
@@ -27,6 +28,7 @@ export async function uploadTrainingExerciseAction(formData: FormData): Promise<
 
   const title = getString(formData, "title");
   const description = getString(formData, "description");
+  const team = getString(formData, "team");
   const tags = normalizeExerciseTags(getString(formData, "tags"));
   const file = formData.get("file");
 
@@ -44,6 +46,7 @@ export async function uploadTrainingExerciseAction(formData: FormData): Promise<
   await createTrainingExercise({
     title,
     description,
+    team: isTeamGroup(team) ? team : null,
     tags,
     file,
     uploadedBy: session.userId,

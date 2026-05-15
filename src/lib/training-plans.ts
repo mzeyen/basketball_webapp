@@ -1,6 +1,7 @@
 import { mkdir, readFile, unlink, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import type { TeamGroup } from "@/lib/teams";
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const trainingPlansDirectory = path.join(dataDirectory, "training-plans");
@@ -21,6 +22,7 @@ export type TrainingPlan = {
   id: string;
   title: string;
   category?: TrainingPlanCategory;
+  team?: TeamGroup | null;
   originalFileName: string;
   storedFileName: string;
   mimeType: string;
@@ -71,9 +73,35 @@ async function writeTrainingPlansDatabase(database: TrainingPlansDatabase): Prom
   await writeFile(trainingPlansFile, JSON.stringify(database, null, 2));
 }
 
-export async function listTrainingPlans(): Promise<TrainingPlan[]> {
+export async function listTrainingPlans(filters?: {
+  category?: TrainingPlanCategory;
+  query?: string;
+  team?: TeamGroup;
+  uploadedBy?: string;
+}): Promise<TrainingPlan[]> {
   const database = await readTrainingPlansDatabase();
-  return [...database.trainingPlans].sort(
+  const query = filters?.query?.trim().toLowerCase();
+  const plans = database.trainingPlans.filter((plan) => {
+    if (filters?.category && plan.category !== filters.category) {
+      return false;
+    }
+
+    if (filters?.team && plan.team !== filters.team) {
+      return false;
+    }
+
+    if (filters?.uploadedBy && plan.uploadedBy !== filters.uploadedBy) {
+      return false;
+    }
+
+    if (query && !`${plan.title} ${plan.originalFileName}`.toLowerCase().includes(query)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  return [...plans].sort(
     (left, right) => new Date(right.uploadedAt).getTime() - new Date(left.uploadedAt).getTime(),
   );
 }
@@ -109,6 +137,7 @@ export async function createTrainingPlan(input: {
   title: string;
   category: TrainingPlanCategory;
   file: File;
+  team?: TeamGroup | null;
   uploadedBy: string;
 }): Promise<TrainingPlan> {
   const extension = getTrainingPlanExtension(input.file);
@@ -126,6 +155,7 @@ export async function createTrainingPlan(input: {
     id,
     title: input.title,
     category: input.category,
+    team: input.team ?? null,
     originalFileName: input.file.name,
     storedFileName,
     mimeType: input.file.type,

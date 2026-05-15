@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import { requireUserSession } from "@/lib/auth/session";
-import { findUserById, toPublicUser } from "@/lib/db";
+import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { deleteTrainingExerciseAction, uploadTrainingExerciseAction } from "@/lib/training-exercise-actions";
 import {
   listTrainingExercises,
@@ -12,12 +12,16 @@ import {
   maxTrainingExerciseTags,
 } from "@/lib/training-exercises";
 import { canAccessAdmin } from "@/lib/rbac/roles";
+import { getTeamGroupLabel, isTeamGroup, teamGroups, type TeamGroup } from "@/lib/teams";
 
 type TrainingExercisesPageProps = {
   searchParams: Promise<{
     deleted?: string;
     error?: string;
+    q?: string;
     tag?: string;
+    team?: string;
+    uploadedBy?: string;
     uploaded?: string;
   }>;
 };
@@ -44,10 +48,17 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
 
   const params = await searchParams;
   const selectedTag = params.tag?.trim().toLowerCase();
-  const [user, trainingExercises, tags] = await Promise.all([
+  const selectedTeam = isTeamGroup(params.team ?? "") ? params.team as TeamGroup : undefined;
+  const [user, trainingExercises, tags, users] = await Promise.all([
     findUserById(session.userId),
-    listTrainingExercises(selectedTag),
+    listTrainingExercises({
+      query: params.q,
+      tag: selectedTag,
+      team: selectedTeam,
+      uploadedBy: params.uploadedBy,
+    }),
     listTrainingExerciseTags(),
+    listUsers(),
   ]);
 
   if (!user) {
@@ -55,6 +66,7 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
   }
 
   const publicUser = toPublicUser(user);
+  const usersById = new Map(users.map((item) => [item.id, item]));
 
   return (
     <>
@@ -92,6 +104,17 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
             <label>
               Tags
               <input name="tags" required placeholder="z. B. wurf, defense, u16" />
+            </label>
+            <label>
+              Team
+              <select name="team" defaultValue="">
+                <option value="">Kein Team</option>
+                {teamGroups.map((team) => (
+                  <option key={team} value={team}>
+                    {getTeamGroupLabel(team)}
+                  </option>
+                ))}
+              </select>
             </label>
             <p className="muted">
               Trenne Tags mit Kommas. Es werden maximal {maxTrainingExerciseTags} Tags pro Übung gespeichert.
@@ -147,11 +170,37 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
 
           <form action="/training-exercises" className="tag-search-form">
             <label>
-              Nach Tag suchen
+              Suche
+              <input name="q" defaultValue={params.q ?? ""} placeholder="Titel, Beschreibung oder Datei" />
+            </label>
+            <label>
+              Tag
               <input name="tag" defaultValue={selectedTag ?? ""} placeholder="z. B. defense" />
             </label>
+            <label>
+              Team
+              <select name="team" defaultValue={params.team ?? ""}>
+                <option value="">Alle Teams</option>
+                {teamGroups.map((team) => (
+                  <option key={team} value={team}>
+                    {getTeamGroupLabel(team)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Ersteller
+              <select name="uploadedBy" defaultValue={params.uploadedBy ?? ""}>
+                <option value="">Alle Ersteller</option>
+                {users.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name || item.email}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button type="submit" className="secondary-button">
-              Suchen
+              Filtern
             </button>
           </form>
 
@@ -165,6 +214,12 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
                       <p className="muted">
                         {getFileTypeLabel(exercise.mimeType)} · {formatFileSize(exercise.size)} ·{" "}
                         {new Date(exercise.uploadedAt).toLocaleString("de-DE")}
+                      </p>
+                      <p className="muted">
+                        {getTeamGroupLabel(exercise.team)} · Erstellt von{" "}
+                        {usersById.get(exercise.uploadedBy)?.name ||
+                          usersById.get(exercise.uploadedBy)?.email ||
+                          "Unbekannt"}
                       </p>
                       {exercise.description ? <p>{exercise.description}</p> : null}
                       <p className="muted">{exercise.originalFileName}</p>

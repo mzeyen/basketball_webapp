@@ -9,7 +9,7 @@ const auditLogFile = path.join(dataDirectory, "audit-log.json");
 
 export type AuditLogEntry = {
   id: string;
-  action: "block-user" | "unblock-user" | "reset-password" | "change-role";
+  action: "block-user" | "unblock-user" | "reset-password" | "change-role" | "change-email" | "change-team" | "delete-user";
   actorEmail: string;
   actorId: string;
   createdAt: string;

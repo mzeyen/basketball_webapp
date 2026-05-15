@@ -460,11 +460,17 @@ textarea {
   color: var(--primary-contrast);
 }
 
-.tag-search-form {
+.tag-search-form,
+.filter-form {
   align-items: end;
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: minmax(220px, 1fr) auto;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.tag-search-form button,
+.filter-form button {
+  align-self: end;
 }
 
 .preview-toggle {
@@ -534,6 +540,13 @@ textarea {
   gap: 0.75rem;
 }
 
+.email-update-form,
+.team-update-form,
+.delete-user-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .audit-log-list {
   display: grid;
   gap: 0.85rem;
@@ -599,7 +612,8 @@ textarea {
     display: grid;
   }
 
-  .tag-search-form {
+  .tag-search-form,
+  .filter-form {
     grid-template-columns: 1fr;
   }
 

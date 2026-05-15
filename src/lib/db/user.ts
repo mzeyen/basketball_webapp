@@ -1,11 +1,13 @@
 import { randomUUID } from "crypto";
 
 import type { Role } from "@/lib/rbac/roles";
+import type { TeamGroup } from "@/lib/teams";
 
 export type User = {
   id: string;
   email: string;
   name?: string | null;
+  team?: TeamGroup | null;
   passwordHash: string;
   role: Role;
   emailVerifiedAt: string | null;
@@ -23,6 +25,7 @@ export type NewUserInput = {
   email: string;
   passwordHash: string;
   name?: string | null;
+  team?: TeamGroup | null;
   role?: Role;
   emailVerificationToken?: string | null;
   emailVerificationTokenExpiresAt?: string | null;
@@ -35,6 +38,7 @@ export function createUserRecord(input: NewUserInput): User {
     id: randomUUID(),
     email: input.email.toLowerCase(),
     name: input.name?.trim() || null,
+    team: input.team ?? null,
     passwordHash: input.passwordHash,
     role: input.role ?? "user",
     emailVerifiedAt: null,

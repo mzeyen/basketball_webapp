@@ -1,11 +1,20 @@
 import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
-import { blockUserAction, resetUserPasswordAction, unblockUserAction, updateUserRoleAction } from "@/lib/admin/user-actions";
+import {
+  blockUserAction,
+  deleteUserAction,
+  resetUserPasswordAction,
+  unblockUserAction,
+  updateUserEmailAction,
+  updateUserRoleAction,
+  updateUserTeamAction,
+} from "@/lib/admin/user-actions";
 import { getRoleLabel, listAuditLogEntries } from "@/lib/audit-log";
 import { requireAdminSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { canAccessSuperAdmin } from "@/lib/rbac/roles";
+import { getTeamGroupLabel, teamGroups } from "@/lib/teams";
 
 type AdminPageProps = {
   searchParams: Promise<{
@@ -31,6 +40,18 @@ function getMessage(params: Awaited<AdminPageProps["searchParams"]>): string | n
     return "Rolle wurde geändert.";
   }
 
+  if (params.updated === "email") {
+    return "E-Mail-Adresse wurde geändert.";
+  }
+
+  if (params.updated === "deleted") {
+    return "Nutzer wurde gelöscht.";
+  }
+
+  if (params.updated === "team") {
+    return "Team wurde geändert.";
+  }
+
   return null;
 }
 
@@ -41,6 +62,18 @@ function getError(params: Awaited<AdminPageProps["searchParams"]>): string | nul
 
   if (params.error === "invalid-user-action") {
     return "Die Nutzeraktion konnte nicht ausgeführt werden.";
+  }
+
+  if (params.error === "invalid-email-update") {
+    return "Die E-Mail-Adresse ist ungültig.";
+  }
+
+  if (params.error === "email-taken") {
+    return "Diese E-Mail-Adresse wird bereits verwendet.";
+  }
+
+  if (params.error === "invalid-delete") {
+    return "Zum Löschen muss die Bestätigung exakt „löschen“ lauten.";
   }
 
   return null;
@@ -93,7 +126,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     <div>
                       <h3>{item.email}</h3>
                       <p className="muted">
-                        {getRoleLabel(item.role)} · Erstellt {new Date(item.createdAt).toLocaleString("de-DE")}
+                        {getRoleLabel(item.role)} · {getTeamGroupLabel(item.team)} · Erstellt{" "}
+                        {new Date(item.createdAt).toLocaleString("de-DE")}
                       </p>
                       <p className={isBlocked ? "status-danger" : "status-ok"}>
                         {isBlocked
@@ -108,6 +142,39 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     </div>
 
                     <div className="user-actions">
+                      {item.role !== "superadmin" ? (
+                        <form action={updateUserEmailAction} className="email-update-form">
+                          <input type="hidden" name="userId" value={item.id} />
+                          <label>
+                            E-Mail ändern
+                            <input name="email" type="email" defaultValue={item.email} required />
+                          </label>
+                          <button type="submit" className="secondary-button">
+                            E-Mail speichern
+                          </button>
+                        </form>
+                      ) : null}
+
+                      {item.role !== "superadmin" ? (
+                        <form action={updateUserTeamAction} className="team-update-form">
+                          <input type="hidden" name="userId" value={item.id} />
+                          <label>
+                            Team
+                            <select name="team" defaultValue={item.team ?? ""}>
+                              <option value="">Kein Team</option>
+                              {teamGroups.map((team) => (
+                                <option key={team} value={team}>
+                                  {getTeamGroupLabel(team)}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <button type="submit" className="secondary-button">
+                            Team speichern
+                          </button>
+                        </form>
+                      ) : null}
+
                       {item.role !== "superadmin" && !isCurrentUser ? (
                         <form action={updateUserRoleAction} className="role-update-form">
                           <input type="hidden" name="userId" value={item.id} />
@@ -148,6 +215,19 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         </label>
                         <button type="submit">Passwort setzen</button>
                       </form>
+
+                      {item.role !== "superadmin" && !isCurrentUser ? (
+                        <form action={deleteUserAction} className="delete-user-form">
+                          <input type="hidden" name="userId" value={item.id} />
+                          <label>
+                            Löschen bestätigen
+                            <input name="confirmation" placeholder="löschen" />
+                          </label>
+                          <button type="submit" className="danger-button">
+                            Nutzer löschen
+                          </button>
+                        </form>
+                      ) : null}
                     </div>
                   </div>
                 </article>

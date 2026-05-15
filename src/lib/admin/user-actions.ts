@@ -6,8 +6,9 @@ import { redirect } from "next/navigation";
 import { hashPassword } from "@/lib/auth/password";
 import { requireAdminSession } from "@/lib/auth/session";
 import { appendAuditLogEntry, getRoleLabel } from "@/lib/audit-log";
-import { findUserById, setUserBlocked, updateUserPassword, updateUserRole } from "@/lib/db";
+import { deleteUser, findUserByEmail, findUserById, setUserBlocked, updateUserEmail, updateUserPassword, updateUserRole, updateUserTeam } from "@/lib/db";
 import { canAccessSuperAdmin, isRole, type Role } from "@/lib/rbac/roles";
+import { getTeamGroupLabel, isTeamGroup } from "@/lib/teams";
 
 function getString(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
@@ -172,4 +173,116 @@ export async function updateUserRoleAction(formData: FormData): Promise<void> {
 
   revalidatePath("/admin");
   redirect("/admin?updated=role");
+}
+
+export async function updateUserEmailAction(formData: FormData): Promise<void> {
+  const session = await requireAdminSession().catch(() => null);
+
+  if (!session) {
+    redirect("/dashboard?error=forbidden");
+  }
+
+  const userId = getString(formData, "userId");
+  const email = getString(formData, "email").toLowerCase();
+
+  if (!userId || !email || !email.includes("@")) {
+    redirect("/admin?error=invalid-email-update");
+  }
+
+  const actor = await findUserById(session.userId);
+  const user = await findUserById(userId);
+
+  if (!actor || !user || user.role === "superadmin") {
+    redirect("/admin?error=invalid-user-action");
+  }
+
+  const existingUser = await findUserByEmail(email);
+
+  if (existingUser && existingUser.id !== user.id) {
+    redirect("/admin?error=email-taken");
+  }
+
+  await updateUserEmail(user.id, email);
+  await appendAuditLogEntry({
+    action: "change-email",
+    actorEmail: actor.email,
+    actorId: actor.id,
+    details: `E-Mail geändert: ${user.email} -> ${email}.`,
+    targetEmail: email,
+    targetId: user.id,
+  });
+
+  revalidatePath("/admin");
+  redirect("/admin?updated=email");
+}
+
+export async function deleteUserAction(formData: FormData): Promise<void> {
+  const session = await requireAdminSession().catch(() => null);
+
+  if (!session) {
+    redirect("/dashboard?error=forbidden");
+  }
+
+  const userId = getString(formData, "userId");
+  const confirmation = getString(formData, "confirmation").toLowerCase();
+
+  if (!userId || userId === session.userId || confirmation !== "löschen") {
+    redirect("/admin?error=invalid-delete");
+  }
+
+  const actor = await findUserById(session.userId);
+  const user = await findUserById(userId);
+
+  if (!actor || !user || user.role === "superadmin") {
+    redirect("/admin?error=invalid-user-action");
+  }
+
+  await deleteUser(user.id);
+  await appendAuditLogEntry({
+    action: "delete-user",
+    actorEmail: actor.email,
+    actorId: actor.id,
+    details: "Nutzer wurde gelöscht.",
+    targetEmail: user.email,
+    targetId: user.id,
+  });
+
+  revalidatePath("/admin");
+  redirect("/admin?updated=deleted");
+}
+
+export async function updateUserTeamAction(formData: FormData): Promise<void> {
+  const session = await requireAdminSession().catch(() => null);
+
+  if (!session) {
+    redirect("/dashboard?error=forbidden");
+  }
+
+  const userId = getString(formData, "userId");
+  const teamValue = getString(formData, "team");
+
+  if (!userId) {
+    redirect("/admin?error=invalid-user-action");
+  }
+
+  const actor = await findUserById(session.userId);
+  const user = await findUserById(userId);
+
+  if (!actor || !user || user.role === "superadmin") {
+    redirect("/admin?error=invalid-user-action");
+  }
+
+  const nextTeam = isTeamGroup(teamValue) ? teamValue : null;
+  await updateUserTeam(user.id, nextTeam);
+  await appendAuditLogEntry({
+    action: "change-team",
+    actorEmail: actor.email,
+    actorId: actor.id,
+    details: `Team geändert: ${getTeamGroupLabel(user.team)} -> ${getTeamGroupLabel(nextTeam)}.`,
+    targetEmail: user.email,
+    targetId: user.id,
+  });
+
+  revalidatePath("/admin");
+  redirect("/admin?updated=team");
 }

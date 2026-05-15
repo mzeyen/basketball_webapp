@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { mkdir, readFile, unlink, writeFile } from "fs/promises";
 import path from "path";
+import type { TeamGroup } from "@/lib/teams";
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const trainingExercisesDirectory = path.join(dataDirectory, "training-exercises");
@@ -19,6 +20,7 @@ export type TrainingExercise = {
   id: string;
   title: string;
   description: string;
+  team?: TeamGroup | null;
   tags: string[];
   originalFileName: string;
   storedFileName: string;
@@ -76,12 +78,35 @@ async function writeTrainingExercisesDatabase(database: TrainingExercisesDatabas
   await writeFile(trainingExercisesFile, JSON.stringify(database, null, 2));
 }
 
-export async function listTrainingExercises(tag?: string): Promise<TrainingExercise[]> {
+export async function listTrainingExercises(filters?: string | {
+  query?: string;
+  tag?: string;
+  team?: TeamGroup;
+  uploadedBy?: string;
+}): Promise<TrainingExercise[]> {
   const database = await readTrainingExercisesDatabase();
-  const normalizedTag = tag ? normalizeExerciseTags(tag)[0] : undefined;
-  const exercises = normalizedTag
-    ? database.trainingExercises.filter((exercise) => exercise.tags.includes(normalizedTag))
-    : database.trainingExercises;
+  const filterObject = typeof filters === "string" ? { tag: filters } : filters;
+  const normalizedTag = filterObject?.tag ? normalizeExerciseTags(filterObject.tag)[0] : undefined;
+  const query = filterObject?.query?.trim().toLowerCase();
+  const exercises = database.trainingExercises.filter((exercise) => {
+    if (normalizedTag && !exercise.tags.includes(normalizedTag)) {
+      return false;
+    }
+
+    if (filterObject?.team && exercise.team !== filterObject.team) {
+      return false;
+    }
+
+    if (filterObject?.uploadedBy && exercise.uploadedBy !== filterObject.uploadedBy) {
+      return false;
+    }
+
+    if (query && !`${exercise.title} ${exercise.description} ${exercise.originalFileName} ${exercise.tags.join(" ")}`.toLowerCase().includes(query)) {
+      return false;
+    }
+
+    return true;
+  });
 
   return [...exercises].sort(
     (left, right) => new Date(right.uploadedAt).getTime() - new Date(left.uploadedAt).getTime(),
@@ -126,6 +151,7 @@ export async function createTrainingExercise(input: {
   title: string;
   description: string;
   tags: string[];
+  team?: TeamGroup | null;
   file: File;
   uploadedBy: string;
 }): Promise<TrainingExercise> {
@@ -144,6 +170,7 @@ export async function createTrainingExercise(input: {
     id,
     title: input.title,
     description: input.description,
+    team: input.team ?? null,
     tags: input.tags,
     originalFileName: input.file.name,
     storedFileName,

@@ -4,6 +4,7 @@ import { Pool, type QueryResultRow } from "pg";
 
 import { createUserRecord, type NewUserInput, type User } from "@/lib/db/user";
 import type { Role } from "@/lib/rbac/roles";
+import { isTeamGroup, type TeamGroup } from "@/lib/teams";
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const usersFile = path.join(dataDirectory, "users.json");
@@ -42,6 +43,7 @@ function toUser(row: QueryResultRow): User {
     id: String(row.id),
     email,
     name: row.name ? String(row.name) : null,
+    team: row.team && isTeamGroup(String(row.team)) ? String(row.team) as TeamGroup : null,
     passwordHash: String(row.password_hash),
     role,
     emailVerifiedAt: row.email_verified_at ? new Date(row.email_verified_at).toISOString() : null,
@@ -66,6 +68,7 @@ async function ensureDatabase(): Promise<void> {
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
       name TEXT NULL,
+      team TEXT NULL,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'user')),
       email_verified_at TIMESTAMPTZ NULL,
@@ -79,6 +82,7 @@ async function ensureDatabase(): Promise<void> {
   `);
 
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT NULL");
+  await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS team TEXT NULL");
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token TEXT NULL");
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token_expires_at TIMESTAMPTZ NULL");
   await getPool().query(`
@@ -167,6 +171,7 @@ export async function createUser(input: NewUserInput): Promise<User> {
           id,
           email,
           name,
+          team,
           password_hash,
           role,
           email_verified_at,
@@ -177,12 +182,13 @@ export async function createUser(input: NewUserInput): Promise<User> {
           created_at,
           updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       `,
       [
         user.id,
         user.email,
         user.name ?? null,
+        user.team ?? null,
         user.passwordHash,
         user.role,
         user.emailVerifiedAt,
@@ -326,6 +332,98 @@ export async function updateUserName(userId: string, name: string | null): Promi
   await writeDatabase(database);
 
   return user;
+}
+
+export async function updateUserEmail(userId: string, email: string): Promise<User | null> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (hasDatabaseUrl()) {
+    await ensureDatabase();
+    const now = new Date().toISOString();
+    const result = await getPool().query(
+      `
+        UPDATE users
+        SET email = $1,
+            email_verified_at = NULL,
+            email_verification_token = NULL,
+            email_verification_token_expires_at = NULL,
+            updated_at = $2
+        WHERE id = $3
+        RETURNING *
+      `,
+      [normalizedEmail, now, userId],
+    );
+
+    return result.rows[0] ? toUser(result.rows[0]) : null;
+  }
+
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.id === userId);
+
+  if (!user) {
+    return null;
+  }
+
+  user.email = normalizedEmail;
+  user.emailVerifiedAt = null;
+  user.emailVerificationToken = null;
+  user.emailVerificationTokenExpiresAt = null;
+  user.updatedAt = new Date().toISOString();
+  await writeDatabase(database);
+
+  return normalizeUserRole(user);
+}
+
+export async function updateUserTeam(userId: string, team: TeamGroup | null): Promise<User | null> {
+  if (hasDatabaseUrl()) {
+    await ensureDatabase();
+    const now = new Date().toISOString();
+    const result = await getPool().query(
+      `
+        UPDATE users
+        SET team = $1,
+            updated_at = $2
+        WHERE id = $3
+        RETURNING *
+      `,
+      [team, now, userId],
+    );
+
+    return result.rows[0] ? toUser(result.rows[0]) : null;
+  }
+
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.id === userId);
+
+  if (!user) {
+    return null;
+  }
+
+  user.team = team;
+  user.updatedAt = new Date().toISOString();
+  await writeDatabase(database);
+
+  return normalizeUserRole(user);
+}
+
+export async function deleteUser(userId: string): Promise<User | null> {
+  if (hasDatabaseUrl()) {
+    await ensureDatabase();
+    const result = await getPool().query("DELETE FROM users WHERE id = $1 RETURNING *", [userId]);
+    return result.rows[0] ? toUser(result.rows[0]) : null;
+  }
+
+  const database = await readDatabase();
+  const user = database.users.find((item) => item.id === userId);
+
+  if (!user) {
+    return null;
+  }
+
+  database.users = database.users.filter((item) => item.id !== userId);
+  await writeDatabase(database);
+
+  return normalizeUserRole(user);
 }
 
 export async function setUserBlocked(userId: string, blocked: boolean): Promise<User | null> {

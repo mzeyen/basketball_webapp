@@ -3,20 +3,26 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import { requireUserSession } from "@/lib/auth/session";
-import { findUserById, toPublicUser } from "@/lib/db";
+import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { deleteTrainingPlanAction, uploadTrainingPlanAction } from "@/lib/training-plan-actions";
 import {
   listTrainingPlans,
   maxTrainingPlanFileSize,
+  isTrainingPlanCategory,
   trainingPlanCategories,
   type TrainingPlanCategory,
 } from "@/lib/training-plans";
 import { canAccessAdmin } from "@/lib/rbac/roles";
+import { getTeamGroupLabel, isTeamGroup, teamGroups, type TeamGroup } from "@/lib/teams";
 
 type TrainingPlansPageProps = {
   searchParams: Promise<{
     deleted?: string;
     error?: string;
+    category?: string;
+    q?: string;
+    team?: string;
+    uploadedBy?: string;
     uploaded?: string;
   }>;
 };
@@ -59,10 +65,18 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
     redirect("/login");
   }
 
-  const [user, trainingPlans, params] = await Promise.all([
+  const params = await searchParams;
+  const selectedCategory = isTrainingPlanCategory(params.category ?? "") ? params.category as TrainingPlanCategory : undefined;
+  const selectedTeam = isTeamGroup(params.team ?? "") ? params.team as TeamGroup : undefined;
+  const [user, trainingPlans, users] = await Promise.all([
     findUserById(session.userId),
-    listTrainingPlans(),
-    searchParams,
+    listTrainingPlans({
+      category: selectedCategory,
+      query: params.q,
+      team: selectedTeam,
+      uploadedBy: params.uploadedBy,
+    }),
+    listUsers(),
   ]);
 
   if (!user) {
@@ -70,6 +84,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
   }
 
   const publicUser = toPublicUser(user);
+  const usersById = new Map(users.map((item) => [item.id, item]));
   const categorizedTrainingPlans = [
     ...trainingPlanCategories.map((category) => ({
       category,
@@ -127,6 +142,17 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
               </select>
             </label>
             <label>
+              Team
+              <select name="team" defaultValue="">
+                <option value="">Kein Team</option>
+                {teamGroups.map((team) => (
+                  <option key={team} value={team}>
+                    {getTeamGroupLabel(team)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
               Datei
               <input
                 name="file"
@@ -142,6 +168,48 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
 
         <section className="card stack">
           <h2>Abgelegte Pläne</h2>
+          <form action="/training-plans" className="filter-form">
+            <label>
+              Suche
+              <input name="q" defaultValue={params.q ?? ""} placeholder="Titel oder Dateiname" />
+            </label>
+            <label>
+              Kategorie
+              <select name="category" defaultValue={params.category ?? ""}>
+                <option value="">Alle Kategorien</option>
+                {trainingPlanCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {getCategoryLabel(category)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Team
+              <select name="team" defaultValue={params.team ?? ""}>
+                <option value="">Alle Teams</option>
+                {teamGroups.map((team) => (
+                  <option key={team} value={team}>
+                    {getTeamGroupLabel(team)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Ersteller
+              <select name="uploadedBy" defaultValue={params.uploadedBy ?? ""}>
+                <option value="">Alle Ersteller</option>
+                {users.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name || item.email}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" className="secondary-button">
+              Filtern
+            </button>
+          </form>
           {trainingPlans.length > 0 ? (
             <div className="training-plan-category-list">
               {categorizedTrainingPlans.map((group) => (
@@ -156,6 +224,10 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
                             <p className="muted">
                               {getFileTypeLabel(plan.mimeType)} · {formatFileSize(plan.size)} ·{" "}
                               {new Date(plan.uploadedAt).toLocaleString("de-DE")}
+                            </p>
+                            <p className="muted">
+                              {getTeamGroupLabel(plan.team)} · Erstellt von{" "}
+                              {usersById.get(plan.uploadedBy)?.name || usersById.get(plan.uploadedBy)?.email || "Unbekannt"}
                             </p>
                             <p className="muted">{plan.originalFileName}</p>
                           </div>
