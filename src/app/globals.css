@@ -767,8 +767,40 @@ textarea {
     justify-content: stretch;
   }
 
-  .standings-config-actions button {
+.standings-config-actions button {
     width: 100%;
+  }
+}
+
+.logo-upload-form {
+  align-items: end;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.admin-logo-preview {
+  align-items: center;
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: inline-flex;
+  height: 5rem;
+  justify-content: center;
+  padding: 0.5rem;
+  width: 5rem;
+}
+
+.admin-logo-preview img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+@media (max-width: 980px) {
+  .logo-upload-form {
+    grid-template-columns: 1fr;
   }
 }
 

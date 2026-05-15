@@ -6,6 +6,7 @@ import {
   deleteUserAction,
   resetUserPasswordAction,
   unblockUserAction,
+  updateClubLogoAction,
   updateUserEmailAction,
   updateUserRoleAction,
   updateUserTeamAction,
@@ -15,6 +16,7 @@ import { getRoleLabel, listAuditLogEntries } from "@/lib/audit-log";
 import { requireAdminSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { canAccessSuperAdmin } from "@/lib/rbac/roles";
+import { getBrandingState } from "@/lib/branding-store";
 import { listTeamStandingConfigs } from "@/lib/team-standings";
 import { getTeamGroupLabel, getTeamGroupLabels, teamGroups } from "@/lib/teams";
 
@@ -62,6 +64,10 @@ function getMessage(params: Awaited<AdminPageProps["searchParams"]>): string | n
     return "Liga-IDs wurden gespeichert. Einige Tabellen konnten nicht aktualisiert werden; vorhandene gecachte Daten bleiben erhalten.";
   }
 
+  if (params.updated === "logo") {
+    return "Vereinslogo wurde aktualisiert.";
+  }
+
   return null;
 }
 
@@ -90,6 +96,10 @@ function getError(params: Awaited<AdminPageProps["searchParams"]>): string | nul
     return "Liga-IDs duerfen nur aus Zahlen bestehen.";
   }
 
+  if (params.error === "invalid-logo-upload") {
+    return "Bitte lade ein gueltiges Bild hoch.";
+  }
+
   return null;
 }
 
@@ -100,10 +110,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     redirect("/dashboard");
   }
 
-  const [user, users, standingsConfigs, params] = await Promise.all([
+  const [user, users, standingsConfigs, brandingState, params] = await Promise.all([
     findUserById(session.userId),
     listUsers(),
     listTeamStandingConfigs(),
+    getBrandingState(),
     searchParams,
   ]);
 
@@ -131,6 +142,32 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
         {message ? <p className="form-success">{message}</p> : null}
         {error ? <p className="form-error">{error}</p> : null}
+
+        {canViewAuditLog ? (
+          <section className="card stack">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Branding</p>
+                <h2>Vereinslogo</h2>
+                <p className="muted">Superuser kÃ¶nnen hier ein neues Logo hochladen. Die Datei ersetzt das aktuelle Vereinslogo.</p>
+              </div>
+              <div className="admin-logo-preview">
+                <img src={brandingState.logoSrc} alt={brandingState.logoAlt} />
+              </div>
+            </div>
+            <form action={updateClubLogoAction} className="logo-upload-form" encType="multipart/form-data">
+              <label>
+                Logo-Datei
+                <input name="logo" type="file" accept="image/*,.svg" required />
+              </label>
+              <label>
+                Alt-Text
+                <input name="logoAlt" type="text" defaultValue={brandingState.logoAlt} />
+              </label>
+              <button type="submit" className="secondary-button">Logo speichern</button>
+            </form>
+          </section>
+        ) : null}
 
         <section className="card stack">
           <div className="section-heading">

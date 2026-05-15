@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { getBrandingState } from "@/lib/branding-store";
 import { appBranding } from "@/lib/branding";
 
 type ClubBrandProps = {
@@ -8,12 +9,13 @@ type ClubBrandProps = {
   size?: "small" | "large";
 };
 
-export function ClubBrand({ className = "", iconOnly = false, size = "small" }: ClubBrandProps) {
+export async function ClubBrand({ className = "", iconOnly = false, size = "small" }: ClubBrandProps) {
+  const brandingState = await getBrandingState();
   const classes = ["club-brand", `club-brand-${size}`, className].filter(Boolean).join(" ");
 
   return (
     <span className={classes}>
-      <Image className="club-brand-logo" src={appBranding.logoSrc} alt={iconOnly ? appBranding.logoAlt : ""} width={72} height={72} priority />
+      <Image className="club-brand-logo" src={brandingState.logoSrc} alt={iconOnly ? brandingState.logoAlt : ""} width={72} height={72} priority />
       {iconOnly ? null : <span className="club-brand-name">{appBranding.appName}</span>}
     </span>
   );
