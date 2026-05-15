@@ -81,8 +81,21 @@ async function ensureDatabase(): Promise<void> {
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT NULL");
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token TEXT NULL");
   await getPool().query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token_expires_at TIMESTAMPTZ NULL");
-  await getPool().query("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
-  await getPool().query("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('superadmin', 'admin', 'user'))");
+  await getPool().query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE table_name = 'users'
+          AND constraint_name = 'users_role_check'
+      ) THEN
+        ALTER TABLE users DROP CONSTRAINT users_role_check;
+      END IF;
+
+      ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('superadmin', 'admin', 'user'));
+    END $$;
+  `);
   await getPool().query("UPDATE users SET role = 'superadmin' WHERE email = 'admin@basketball.local'");
 
   initialized = true;
