@@ -24,7 +24,7 @@ export default async function HomePage() {
             {publicUser ? (
               <div className="hero-actions">
                 <Link href="/dashboard" className="secondary-button">
-                  Dashboard oeffnen
+                  Dashboard öffnen
                 </Link>
               </div>
             ) : (

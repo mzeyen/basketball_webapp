@@ -93,11 +93,11 @@ function getError(params: Awaited<AdminPageProps["searchParams"]>): string | nul
   }
 
   if (params.error === "invalid-standings-config") {
-    return "Liga-IDs duerfen nur aus Zahlen bestehen.";
+    return "Liga-IDs dürfen nur aus Zahlen bestehen.";
   }
 
   if (params.error === "invalid-logo-upload") {
-    return "Bitte lade ein gueltiges Bild hoch.";
+    return "Bitte lade ein gültiges Bild hoch.";
   }
 
   return null;
@@ -149,7 +149,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               <div>
                 <p className="eyebrow">Branding</p>
                 <h2>Vereinslogo</h2>
-                <p className="muted">Superuser kÃ¶nnen hier ein neues Logo hochladen. Die Datei ersetzt das aktuelle Vereinslogo.</p>
+                <p className="muted">Superuser können hier ein neues Logo hochladen. Die Datei ersetzt das aktuelle Vereinslogo.</p>
               </div>
               <div className="admin-logo-preview">
                 <img src={brandingState.logoSrc} alt={brandingState.logoAlt} />
@@ -172,10 +172,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <section className="card stack">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Thueringen</p>
+              <p className="eyebrow">Thüringen</p>
               <h2>Tabellen-Liga-IDs</h2>
               <p className="muted">
-                Speichere pro Team die Liga-ID aus basketball-bund.net. Die App ruft Tabellen ueber{" "}
+                Speichere pro Team die Liga-ID aus basketball-bund.net. Die App ruft Tabellen über{" "}
                 <code>https://www.basketball-bund.net/rest/competition/table/id/&lt;ID&gt;</code> ab und cached sie 48 Stunden.
               </p>
             </div>

@@ -23,7 +23,7 @@ export function AppHeader({ displayName, email, role }: AppHeaderProps) {
         <nav>
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/calendar">Kalender</Link>
-          <Link href="/training-plans">Trainingsplaene</Link>
+          <Link href="/training-plans">Trainingspläne</Link>
           <Link href="/training-exercises">Trainingsübungen</Link>
           {role === "admin" || role === "superadmin" ? <Link href="/admin">Admin</Link> : null}
         </nav>
@@ -31,7 +31,7 @@ export function AppHeader({ displayName, email, role }: AppHeaderProps) {
       <div className="app-header-actions">
         {email ? (
           <form action={logoutAction}>
-            <Link href="/profile" className="user-badge" aria-label="Profil oeffnen">
+            <Link href="/profile" className="user-badge" aria-label="Profil öffnen">
               <span className="user-badge-icon" aria-hidden="true">
                 {roleInitial}
               </span>

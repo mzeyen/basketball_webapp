@@ -6,5 +6,5 @@ export const appBranding = {
   heroTitle: process.env.NEXT_PUBLIC_HERO_TITLE?.trim() || "Verwalte dein Team sicher an einem Ort.",
   heroText:
     process.env.NEXT_PUBLIC_HERO_TEXT?.trim() ||
-    "CourtControl buendelt Trainingsplaene, geschuetzte Team-Bereiche und Rollenverwaltung fuer deinen Verein.",
+    "CourtControl bündelt Trainingspläne, geschützte Team-Bereiche und Rollenverwaltung für deinen Verein.",
 };

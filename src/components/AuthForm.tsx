@@ -13,10 +13,10 @@ type AuthFormProps = {
 };
 
 const errorMessages: Record<string, string> = {
-  "invalid-input": "Bitte pruefe Name, E-Mail und Passwort. Das Passwort muss mindestens 8 Zeichen haben und uebereinstimmen.",
-  "email-taken": "Fuer diese E-Mail existiert bereits ein Konto.",
+  "invalid-input": "Bitte prüfe Name, E-Mail und Passwort. Das Passwort muss mindestens 8 Zeichen haben und übereinstimmen.",
+  "email-taken": "Für diese E-Mail existiert bereits ein Konto.",
   "invalid-credentials": "E-Mail oder Passwort ist falsch.",
-  "invalid-token": "Der Verifizierungslink ist ungueltig oder abgelaufen.",
+  "invalid-token": "Der Verifizierungslink ist ungültig oder abgelaufen.",
 };
 
 export function AuthForm({ action, title, submitLabel, helperText, error, mode = "login" }: AuthFormProps) {
@@ -48,7 +48,7 @@ export function AuthForm({ action, title, submitLabel, helperText, error, mode =
         </label>
         {isRegister ? (
           <label>
-            Passwort bestaetigen
+            Passwort bestätigen
             <input name="passwordConfirmation" type="password" autoComplete="new-password" minLength={8} required />
           </label>
         ) : null}
