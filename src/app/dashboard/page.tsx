@@ -108,23 +108,6 @@ export default async function DashboardPage() {
             )}
           </article>
 
-          <aside className="card account-summary">
-            <h2>Konto</h2>
-            <div className="account-summary-grid">
-              <div>
-                <h3>Rolle</h3>
-                <p>{publicUser.role}</p>
-              </div>
-              <div>
-                <h3>E-Mail verifiziert</h3>
-                <p>{publicUser.emailVerifiedAt ?? "Noch nicht verifiziert"}</p>
-              </div>
-              <div>
-                <h3>Erstellt</h3>
-                <p>{new Date(publicUser.createdAt).toLocaleString("de-DE")}</p>
-              </div>
-            </div>
-          </aside>
         </section>
 
         <TeamStandingsWidget standingsList={standingsList} />
@@ -188,13 +171,6 @@ export default async function DashboardPage() {
         </section>
 
         <section className="grid">
-          <article className="card">
-            <h2>Profil</h2>
-            <p className="muted">Kontodaten, letzte Uploads und Template Mode verwalten.</p>
-            <a href="/profile" className="secondary-button">
-              Profil öffnen
-            </a>
-          </article>
           <article className="card">
             <h2>Kalender</h2>
             <p className="muted">Trainingstermine planen und mit Trainingsplänen verknüpfen.</p>

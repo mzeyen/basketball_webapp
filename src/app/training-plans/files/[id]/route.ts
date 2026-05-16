@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: TrainingPlanFileRout
   }
 
   const file = await readFile(getTrainingPlanFilePath(plan));
-  const disposition = plan.mimeType === "application/pdf" ? "inline" : "attachment";
+  const disposition = plan.mimeType === "application/pdf" || plan.mimeType === "text/html" ? "inline" : "attachment";
 
   return new NextResponse(file, {
     headers: {

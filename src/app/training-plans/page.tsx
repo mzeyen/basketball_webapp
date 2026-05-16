@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { requireUserSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
-import { deleteTrainingPlanAction, uploadTrainingPlanAction } from "@/lib/training-plan-actions";
+import {
+  createTrainingPlanFromExercisesAction,
+  deleteTrainingPlanAction,
+  uploadTrainingPlanAction,
+} from "@/lib/training-plan-actions";
 import {
   listTrainingPlans,
   maxTrainingPlanFileSize,
@@ -12,6 +16,7 @@ import {
   trainingPlanCategories,
   type TrainingPlanCategory,
 } from "@/lib/training-plans";
+import { listTrainingExercises } from "@/lib/training-exercises";
 import { canAccessAdmin } from "@/lib/rbac/roles";
 import { getTeamGroupLabel, isTeamGroup, teamGroups, type TeamGroup } from "@/lib/teams";
 
@@ -24,6 +29,7 @@ type TrainingPlansPageProps = {
     team?: string;
     uploadedBy?: string;
     uploaded?: string;
+    created?: string;
   }>;
 };
 
@@ -39,6 +45,10 @@ function formatMaxUploadSize(): string {
 function getFileTypeLabel(mimeType: string): string {
   if (mimeType === "application/pdf") {
     return "PDF";
+  }
+
+  if (mimeType === "text/html") {
+    return "Generiert";
   }
 
   return "Word";
@@ -68,7 +78,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
   const params = await searchParams;
   const selectedCategory = isTrainingPlanCategory(params.category ?? "") ? params.category as TrainingPlanCategory : undefined;
   const selectedTeam = isTeamGroup(params.team ?? "") ? params.team as TeamGroup : undefined;
-  const [user, trainingPlans, users] = await Promise.all([
+  const [user, trainingPlans, trainingExercises, users] = await Promise.all([
     findUserById(session.userId),
     listTrainingPlans({
       category: selectedCategory,
@@ -76,6 +86,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
       team: selectedTeam,
       uploadedBy: params.uploadedBy,
     }),
+    listTrainingExercises(),
     listUsers(),
   ]);
 
@@ -121,7 +132,11 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
           {params.error === "forbidden-delete" ? (
             <p className="form-error">Du kannst nur eigene Trainingspläne löschen.</p>
           ) : null}
+          {params.error === "invalid-generated-plan" ? (
+            <p className="form-error">Bitte wähle Titel, Kategorie und mindestens eine vorhandene Übung aus.</p>
+          ) : null}
           {params.uploaded ? <p className="form-success">Trainingsplan wurde gespeichert.</p> : null}
+          {params.created ? <p className="form-success">Trainingsplan wurde aus Übungen erstellt.</p> : null}
           {params.deleted ? <p className="form-success">Trainingsplan wurde gelöscht.</p> : null}
           <form action={uploadTrainingPlanAction} className="stack">
             <label>
@@ -164,6 +179,58 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
             <p className="muted">Maximale Dateigröße: {formatMaxUploadSize()}.</p>
             <button type="submit">Trainingsplan speichern</button>
           </form>
+        </section>
+
+        <section className="card stack">
+          <h2>Plan aus Übungen erstellen</h2>
+          {trainingExercises.length > 0 ? (
+            <form action={createTrainingPlanFromExercisesAction} className="stack">
+              <label>
+                Titel
+                <input name="title" minLength={3} required placeholder="z. B. Wurftraining U16" />
+              </label>
+              <label>
+                Kategorie
+                <select name="category" required defaultValue="">
+                  <option value="" disabled>
+                    Kategorie wählen
+                  </option>
+                  {trainingPlanCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {getCategoryLabel(category)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Team
+                <select name="team" defaultValue="">
+                  <option value="">Kein Team</option>
+                  {teamGroups.map((team) => (
+                    <option key={team} value={team}>
+                      {getTeamGroupLabel(team)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="exercise-picker" aria-label="Übungen auswählen">
+                {trainingExercises.map((exercise) => (
+                  <label className="exercise-picker-row" key={exercise.id}>
+                    <input type="checkbox" name="exerciseIds" value={exercise.id} />
+                    <span>
+                      <strong>{exercise.title}</strong>
+                      <small>
+                        {getTeamGroupLabel(exercise.team)} · {exercise.tags.join(", ") || "Keine Tags"}
+                      </small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <button type="submit">Plan erstellen</button>
+            </form>
+          ) : (
+            <p className="muted">Lege zuerst Übungen an, um daraus einen Trainingsplan zu erstellen.</p>
+          )}
         </section>
 
         <section className="card stack">
@@ -229,6 +296,9 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
                               {getTeamGroupLabel(plan.team)} · Erstellt von{" "}
                               {usersById.get(plan.uploadedBy)?.name || usersById.get(plan.uploadedBy)?.email || "Unbekannt"}
                             </p>
+                            {plan.sourceExerciseIds?.length ? (
+                              <p className="muted">Erstellt aus {plan.sourceExerciseIds.length} Übungen.</p>
+                            ) : null}
                             <p className="muted">{plan.originalFileName}</p>
                           </div>
                           <div className="training-plan-actions">
@@ -240,7 +310,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
                                 </button>
                               </form>
                             ) : null}
-                            {plan.mimeType === "application/pdf" ? (
+                            {plan.mimeType === "application/pdf" || plan.mimeType === "text/html" ? (
                               <details className="preview-toggle">
                                 <summary>Vorschau</summary>
                                 <iframe

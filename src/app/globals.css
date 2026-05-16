@@ -281,7 +281,7 @@ main {
   align-items: stretch;
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .dashboard-recent-list {
@@ -438,6 +438,38 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+.exercise-picker {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.exercise-picker-row {
+  align-items: flex-start;
+  background: var(--subtle-background);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 0.85rem 1rem;
+}
+
+.exercise-picker-row input {
+  margin-top: 0.25rem;
+}
+
+.exercise-picker-row span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.exercise-picker-row small {
+  color: var(--muted);
 }
 
 .upload-overview-list {

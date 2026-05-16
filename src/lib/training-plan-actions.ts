@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import { requireUserSession } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/rbac/roles";
 import { isTeamGroup } from "@/lib/teams";
+import { findTrainingExerciseById, type TrainingExercise } from "@/lib/training-exercises";
 import {
   createTrainingPlan,
+  createTrainingPlanFromExercises,
   deleteTrainingPlan,
   findTrainingPlanById,
   isAllowedTrainingPlanFile,
@@ -17,6 +19,10 @@ import {
 
 function getString(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
+}
+
+function getStrings(formData: FormData, key: string): string[] {
+  return formData.getAll(key).map((value) => String(value).trim()).filter(Boolean);
 }
 
 export async function uploadTrainingPlanAction(formData: FormData): Promise<void> {
@@ -52,6 +58,42 @@ export async function uploadTrainingPlanAction(formData: FormData): Promise<void
 
   revalidatePath("/training-plans");
   redirect("/training-plans?uploaded=1");
+}
+
+export async function createTrainingPlanFromExercisesAction(formData: FormData): Promise<void> {
+  const session = await requireUserSession().catch(() => null);
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  const title = getString(formData, "title");
+  const category = getString(formData, "category");
+  const team = getString(formData, "team");
+  const exerciseIds = [...new Set(getStrings(formData, "exerciseIds"))];
+
+  if (title.length < 3 || !isTrainingPlanCategory(category) || exerciseIds.length === 0) {
+    redirect("/training-plans?error=invalid-generated-plan");
+  }
+
+  const exercises = (await Promise.all(exerciseIds.map((exerciseId) => findTrainingExerciseById(exerciseId)))).filter(
+    (exercise): exercise is TrainingExercise => Boolean(exercise),
+  );
+
+  if (exercises.length !== exerciseIds.length) {
+    redirect("/training-plans?error=invalid-generated-plan");
+  }
+
+  await createTrainingPlanFromExercises({
+    title,
+    category,
+    team: isTeamGroup(team) ? team : null,
+    exercises,
+    uploadedBy: session.userId,
+  });
+
+  revalidatePath("/training-plans");
+  redirect("/training-plans?created=1");
 }
 
 export async function deleteTrainingPlanAction(formData: FormData): Promise<void> {
