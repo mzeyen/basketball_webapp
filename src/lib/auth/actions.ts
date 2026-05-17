@@ -57,5 +57,5 @@ export async function loginAction(formData: FormData): Promise<void> {
 
 export async function logoutAction(): Promise<void> {
   await clearSessionCookie();
-  redirect("/login");
+  redirect("/");
 }

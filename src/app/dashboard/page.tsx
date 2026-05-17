@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { readFile } from "fs/promises";
+import path from "path";
 
 import { AppHeader } from "@/components/AppHeader";
 import { ClubBrand } from "@/components/ClubBrand";
@@ -12,24 +14,33 @@ import { getTeamGroupLabel } from "@/lib/teams";
 import { listTrainingExercises } from "@/lib/training-exercises";
 import { listTrainingPlans } from "@/lib/training-plans";
 
-const dashboardHighlights = [
-  {
-    title: "Training zentral planen",
-    text: "Trainingspläne hochladen, aus Übungen zusammenstellen und mit Terminen verknüpfen.",
-  },
-  {
-    title: "Übungen mit Medien",
-    text: "Übungen speichern, taggen und mit Bildern oder Videos für Trainer und Teams verständlich machen.",
-  },
-  {
-    title: "Teams und Termine",
-    text: "Eigene Teams wie u12-2 anlegen, Kalender pflegen und relevante Inhalte nach Mannschaft filtern.",
-  },
-  {
-    title: "Tabellen im Blick",
-    text: "Liga-IDs hinterlegen und Tabellen automatisch aus basketball-bund.net anzeigen lassen.",
-  },
-];
+type FeatureSection = {
+  items: string[];
+  title: string;
+};
+
+const featuresFilePath = path.join(process.cwd(), "FEATURES.md");
+
+function parseFeatureSections(markdown: string): FeatureSection[] {
+  const sections: FeatureSection[] = [];
+  let current: FeatureSection | null = null;
+
+  for (const rawLine of markdown.split(/\r?\n/)) {
+    const line = rawLine.trim();
+
+    if (line.startsWith("## ")) {
+      current = { title: line.slice(3).trim(), items: [] };
+      sections.push(current);
+      continue;
+    }
+
+    if (line.startsWith("- ") && current) {
+      current.items.push(line.slice(2).trim());
+    }
+  }
+
+  return sections;
+}
 
 type RecentUpload = {
   createdBy: string;
@@ -54,6 +65,9 @@ export default async function DashboardPage() {
   const session = await getCurrentSession();
 
   if (!session) {
+    const featureMarkdown = await readFile(featuresFilePath, "utf8");
+    const featureSections = parseFeatureSections(featureMarkdown);
+
     return (
       <>
         <AppHeader />
@@ -75,35 +89,25 @@ export default async function DashboardPage() {
             </div>
           </section>
 
-          <section className="public-dashboard-grid">
-            {dashboardHighlights.map((highlight) => (
-              <article className="card public-dashboard-feature" key={highlight.title}>
-                <h2>{highlight.title}</h2>
-                <p className="muted">{highlight.text}</p>
-              </article>
-            ))}
-          </section>
-
           <section className="card stack">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Funktionen</p>
-                <h2>Was angemeldete Nutzer bekommen</h2>
+                <p className="eyebrow">FEATURES.md</p>
+                <h2>Funktionsübersicht</h2>
+                <p className="muted">Die wichtigsten Inhalte der Feature-Datei in lesbarer Form.</p>
               </div>
             </div>
-            <div className="public-feature-list">
-              <div>
-                <strong>Kalender</strong>
-                <span>Trainingstermine mit Team, Ort, Notizen und Trainingsplan-Verknüpfung.</span>
-              </div>
-              <div>
-                <strong>Trainingsbibliothek</strong>
-                <span>Pläne, Übungen, Medien, Tags und geschützte Downloads.</span>
-              </div>
-              <div>
-                <strong>Adminbereich</strong>
-                <span>Nutzer, Teams, Liga-IDs, Vereinslogo und Änderungsprotokoll verwalten.</span>
-              </div>
+            <div className="public-feature-sections">
+              {featureSections.map((section) => (
+                <article className="public-feature-section" key={section.title}>
+                  <h3>{section.title}</h3>
+                  <ul>
+                    {section.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
             </div>
           </section>
         </main>
