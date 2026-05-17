@@ -12,7 +12,6 @@ CourtControl ist eine Basketball-Webapp für Vereine und Teams. Die App bündelt
 
 - Registrierung und Login mit E-Mail und Passwort.
 - E-Mail-Verifizierung.
-- Signierte Session-Cookies.
 - Rollen für Nutzer, Admins und Superadmins.
 - Gesperrte oder gelöschte Nutzer verlieren automatisch den Zugriff.
 
@@ -36,7 +35,7 @@ CourtControl ist eine Basketball-Webapp für Vereine und Teams. Die App bündelt
 - Upload von PDF-, DOC- und DOCX-Dateien.
 - Kategorisierung nach Altersklasse oder frei angelegtem Team.
 - Suche und Filter nach Kategorie, Team und Ersteller.
-- Geschützte Datei-Auslieferung.
+- Geschützter Zugriff auf Dateien und Trainingsunterlagen.
 - PDF- und HTML-Vorschau direkt in der App.
 - Trainingsplan-Builder aus vorhandenen Übungen.
 - Sortierbare Übungen mit Dauer, Material und Coaching-Notizen.
@@ -59,9 +58,8 @@ CourtControl ist eine Basketball-Webapp für Vereine und Teams. Die App bündelt
 ## Tabellen
 
 - Basketball-Bund Liga-IDs pro Team im Adminbereich pflegen.
-- Automatischer Abruf über die Basketball-Bund REST-Schnittstelle.
-- Persistenter Cache mit 48 Stunden Gültigkeit.
-- Fallback auf gecachte Daten, wenn die externe Quelle nicht erreichbar ist.
+- Automatische Tabellenanzeige für konfigurierte Teams.
+- Zuverlässige Anzeige vorhandener Tabelleninformationen, auch wenn externe Daten zeitweise nicht verfügbar sind.
 
 ## Adminbereich
 
@@ -72,9 +70,3 @@ CourtControl ist eine Basketball-Webapp für Vereine und Teams. Die App bündelt
 - Teams und Tabellen-Liga-IDs verwalten.
 - Änderungsprotokoll für Superadmins.
 - Aufklappbare Nutzer- und Log-Einträge für bessere Übersicht.
-
-## Speicherung
-
-- Nutzer in PostgreSQL, wenn `DATABASE_URL` gesetzt ist.
-- Lokaler JSON-Fallback für Entwicklung.
-- Uploads, Medien und Konfigurationsdaten werden lokal unter `.data` gespeichert.
