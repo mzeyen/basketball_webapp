@@ -11,7 +11,9 @@ import {
   deleteTrainingExercise,
   findTrainingExerciseById,
   isAllowedTrainingExerciseFile,
+  isAllowedTrainingExerciseMedia,
   maxTrainingExerciseFileSize,
+  maxTrainingExerciseMediaSize,
   normalizeExerciseTags,
 } from "@/lib/training-exercises";
 
@@ -31,6 +33,8 @@ export async function uploadTrainingExerciseAction(formData: FormData): Promise<
   const team = getString(formData, "team");
   const tags = normalizeExerciseTags(getString(formData, "tags"));
   const file = formData.get("file");
+  const mediaFile = formData.get("mediaFile");
+  const hasMediaFile = mediaFile instanceof File && mediaFile.size > 0;
 
   if (
     title.length < 3 ||
@@ -38,7 +42,8 @@ export async function uploadTrainingExerciseAction(formData: FormData): Promise<
     !(file instanceof File) ||
     file.size === 0 ||
     file.size > maxTrainingExerciseFileSize ||
-    !isAllowedTrainingExerciseFile(file)
+    !isAllowedTrainingExerciseFile(file) ||
+    (hasMediaFile && (mediaFile.size > maxTrainingExerciseMediaSize || !isAllowedTrainingExerciseMedia(mediaFile)))
   ) {
     redirect("/training-exercises?error=invalid-upload");
   }
@@ -49,6 +54,7 @@ export async function uploadTrainingExerciseAction(formData: FormData): Promise<
     team: isTeamGroup(team) ? team : null,
     tags,
     file,
+    mediaFile: hasMediaFile ? mediaFile : null,
     uploadedBy: session.userId,
   });
 

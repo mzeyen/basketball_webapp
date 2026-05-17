@@ -1,34 +1,40 @@
-export const teamGroups = ["u10", "u12", "u14", "u16", "u19", "damen", "coaches"] as const;
+export const teamGroups = ["u10", "u12", "u14", "u16", "u19", "damen"] as const;
 
-export type TeamGroup = (typeof teamGroups)[number];
+export type TeamGroup = string;
+
+export function normalizeTeamValue(value: string): string {
+  return value.trim().toLowerCase();
+}
 
 export function isTeamGroup(value: string): value is TeamGroup {
-  return teamGroups.includes(value as TeamGroup);
+  const normalizedValue = normalizeTeamValue(value);
+  return normalizedValue !== "coaches" && /^[a-z0-9][a-z0-9-]{1,30}$/.test(normalizedValue);
 }
 
 export function normalizeTeamGroups(values: unknown): TeamGroup[] {
   const rawValues = Array.isArray(values) ? values : typeof values === "string" ? [values] : [];
-  return [...new Set(rawValues.map(String).filter(isTeamGroup))];
+  return [...new Set(rawValues.map(String).map(normalizeTeamValue).filter(isTeamGroup))];
 }
 
 export function getTeamGroupLabel(team: TeamGroup | null | undefined): string {
-  const labels: Record<TeamGroup, string> = {
+  const labels: Record<string, string> = {
     u10: "U10",
     u12: "U12",
     u14: "U14",
     u16: "U16",
     u19: "U19",
     damen: "Damen",
-    coaches: "Coaches",
   };
 
-  return team ? labels[team] : "Kein Team";
+  return team ? labels[team] ?? team.toUpperCase() : "Kein Team";
 }
 
 export function getTeamGroupLabels(teams: TeamGroup[] | null | undefined): string {
-  if (!teams?.length) {
+  const normalizedTeams = normalizeTeamGroups(teams).filter((team) => team !== "coaches");
+
+  if (!normalizedTeams.length) {
     return "Kein Team";
   }
 
-  return teams.map(getTeamGroupLabel).join(", ");
+  return normalizedTeams.map(getTeamGroupLabel).join(", ");
 }

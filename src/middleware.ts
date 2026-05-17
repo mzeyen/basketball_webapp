@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { sessionCookieName, verifySessionToken } from "@/lib/auth/token";
 
-const privateRoutes = ["/dashboard", "/profile", "/admin", "/calendar", "/training-plans", "/training-exercises"];
+const privateRoutes = ["/profile", "/admin", "/calendar", "/training-plans", "/training-exercises"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -24,5 +24,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*", "/admin/:path*", "/calendar/:path*", "/training-plans/:path*", "/training-exercises/:path*"],
+  matcher: ["/profile/:path*", "/admin/:path*", "/calendar/:path*", "/training-plans/:path*", "/training-exercises/:path*"],
 };

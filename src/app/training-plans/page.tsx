@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
+import { TrainingPlanExerciseBuilder } from "@/components/TrainingPlanExerciseBuilder";
 import { requireUserSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import {
@@ -18,7 +19,8 @@ import {
 } from "@/lib/training-plans";
 import { listTrainingExercises } from "@/lib/training-exercises";
 import { canAccessAdmin } from "@/lib/rbac/roles";
-import { getTeamGroupLabel, isTeamGroup, teamGroups, type TeamGroup } from "@/lib/teams";
+import { listTeamGroups } from "@/lib/team-store";
+import { getTeamGroupLabel, isTeamGroup, type TeamGroup } from "@/lib/teams";
 
 type TrainingPlansPageProps = {
   searchParams: Promise<{
@@ -78,7 +80,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
   const params = await searchParams;
   const selectedCategory = isTrainingPlanCategory(params.category ?? "") ? params.category as TrainingPlanCategory : undefined;
   const selectedTeam = isTeamGroup(params.team ?? "") ? params.team as TeamGroup : undefined;
-  const [user, trainingPlans, trainingExercises, users] = await Promise.all([
+  const [user, trainingPlans, trainingExercises, users, teamGroups] = await Promise.all([
     findUserById(session.userId),
     listTrainingPlans({
       category: selectedCategory,
@@ -88,6 +90,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
     }),
     listTrainingExercises(),
     listUsers(),
+    listTeamGroups(),
   ]);
 
   if (!user) {
@@ -119,8 +122,15 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
           </p>
         </section>
 
-        <section className="card stack">
-          <h2>Plan hochladen</h2>
+        <details className="card stack collapsible-card">
+          <summary className="data-row-summary">
+            <div>
+              <h2>Plan hochladen</h2>
+              <p className="muted">PDF- oder Word-Datei als Trainingsplan ablegen.</p>
+            </div>
+          </summary>
+          <div className="data-row-body">
+          <h2 className="visually-hidden">Plan hochladen</h2>
           {params.error === "invalid-upload" ? (
             <p className="form-error">
               Bitte lade eine PDF-, DOC- oder DOCX-Datei bis {formatMaxUploadSize()} mit Titel und Kategorie hoch.
@@ -179,10 +189,18 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
             <p className="muted">Maximale Dateigröße: {formatMaxUploadSize()}.</p>
             <button type="submit">Trainingsplan speichern</button>
           </form>
-        </section>
+          </div>
+        </details>
 
-        <section className="card stack">
-          <h2>Plan aus Übungen erstellen</h2>
+        <details className="card stack collapsible-card">
+          <summary className="data-row-summary">
+            <div>
+              <h2>Plan aus Übungen erstellen</h2>
+              <p className="muted">Vorhandene Übungen sortieren und als Trainingsplan generieren.</p>
+            </div>
+          </summary>
+          <div className="data-row-body">
+          <h2 className="visually-hidden">Plan aus Übungen erstellen</h2>
           {trainingExercises.length > 0 ? (
             <form action={createTrainingPlanFromExercisesAction} className="stack">
               <label>
@@ -213,25 +231,14 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
                   ))}
                 </select>
               </label>
-              <div className="exercise-picker" aria-label="Übungen auswählen">
-                {trainingExercises.map((exercise) => (
-                  <label className="exercise-picker-row" key={exercise.id}>
-                    <input type="checkbox" name="exerciseIds" value={exercise.id} />
-                    <span>
-                      <strong>{exercise.title}</strong>
-                      <small>
-                        {getTeamGroupLabel(exercise.team)} · {exercise.tags.join(", ") || "Keine Tags"}
-                      </small>
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <TrainingPlanExerciseBuilder exercises={trainingExercises} />
               <button type="submit">Plan erstellen</button>
             </form>
           ) : (
             <p className="muted">Lege zuerst Übungen an, um daraus einen Trainingsplan zu erstellen.</p>
           )}
-        </section>
+          </div>
+        </details>
 
         <section className="card stack">
           <h2>Abgelegte Pläne</h2>
@@ -284,8 +291,16 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
                   <h3>{getCategoryLabel(group.category)}</h3>
                   <div className="training-plan-list">
                     {group.plans.map((plan) => (
-                      <article className="training-plan-row" key={plan.id}>
-                        <div className="training-plan-main">
+                      <details className="training-plan-row data-details" key={plan.id}>
+                        <summary className="data-row-summary">
+                          <div>
+                            <h4>{plan.title}</h4>
+                            <p className="muted">
+                              {getFileTypeLabel(plan.mimeType)} - {formatFileSize(plan.size)}
+                            </p>
+                          </div>
+                        </summary>
+                        <div className="training-plan-main data-row-body">
                           <div>
                             <h4>{plan.title}</h4>
                             <p className="muted">
@@ -325,7 +340,7 @@ export default async function TrainingPlansPage({ searchParams }: TrainingPlansP
                             </Link>
                           </div>
                         </div>
-                      </article>
+                      </details>
                     ))}
                   </div>
                 </div>

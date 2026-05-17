@@ -11,14 +11,15 @@ import {
   updateUserRoleAction,
   updateUserTeamAction,
 } from "@/lib/admin/user-actions";
-import { updateTeamStandingConfigsAction } from "@/lib/admin/standings-actions";
+import { createTeamGroupAction, updateTeamStandingConfigsAction } from "@/lib/admin/standings-actions";
 import { getRoleLabel, listAuditLogEntries } from "@/lib/audit-log";
 import { requireAdminSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { canAccessSuperAdmin } from "@/lib/rbac/roles";
 import { getBrandingState } from "@/lib/branding-store";
+import { listTeamGroups } from "@/lib/team-store";
 import { listTeamStandingConfigs } from "@/lib/team-standings";
-import { getTeamGroupLabel, getTeamGroupLabels, teamGroups } from "@/lib/teams";
+import { getTeamGroupLabel, getTeamGroupLabels } from "@/lib/teams";
 
 type AdminPageProps = {
   searchParams: Promise<{
@@ -56,6 +57,10 @@ function getMessage(params: Awaited<AdminPageProps["searchParams"]>): string | n
     return "Team wurde geändert.";
   }
 
+  if (params.updated === "team-created") {
+    return "Team wurde angelegt.";
+  }
+
   if (params.updated === "standings-config") {
     return "Tabellen-Liga-IDs wurden gespeichert.";
   }
@@ -89,11 +94,15 @@ function getError(params: Awaited<AdminPageProps["searchParams"]>): string | nul
   }
 
   if (params.error === "invalid-delete") {
-    return "Zum Löschen muss die Bestätigung exakt „löschen“ lauten.";
+    return 'Zum Löschen muss die Bestätigung exakt "löschen" lauten.';
   }
 
   if (params.error === "invalid-standings-config") {
     return "Liga-IDs dürfen nur aus Zahlen bestehen.";
+  }
+
+  if (params.error === "invalid-team") {
+    return "Team-Bezeichnungen dürfen nur Buchstaben, Zahlen und Bindestriche enthalten.";
   }
 
   if (params.error === "invalid-logo-upload") {
@@ -110,11 +119,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     redirect("/dashboard");
   }
 
-  const [user, users, standingsConfigs, brandingState, params] = await Promise.all([
+  const [user, users, standingsConfigs, brandingState, teamGroups, params] = await Promise.all([
     findUserById(session.userId),
     listUsers(),
     listTeamStandingConfigs(),
     getBrandingState(),
+    listTeamGroups(),
     searchParams,
   ]);
 
@@ -180,6 +190,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               </p>
             </div>
           </div>
+          <form action={createTeamGroupAction} className="admin-team-create-form">
+            <label>
+              Neues Team
+              <input name="team" placeholder="z. B. u12-2" required />
+            </label>
+            <button type="submit" className="secondary-button">
+              Team anlegen
+            </button>
+          </form>
           <form action={updateTeamStandingConfigsAction} className="standings-config-form">
             {standingsConfigs.map((config) => (
               <label key={config.team}>
@@ -208,14 +227,28 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               const isCurrentUser = item.id === session.userId;
               const isBlocked = Boolean(item.blockedAt);
               const assignedTeams = item.teams ?? (item.team ? [item.team] : []);
+              const displayName = item.name?.trim() || item.email;
 
               return (
-                <article className="user-row" key={item.id}>
+                <details className="user-row" key={item.id}>
+                  <summary className="user-row-summary">
+                    <div>
+                      <h3>{displayName}</h3>
+                      {item.name ? <p className="muted">{item.email}</p> : null}
+                      <p className="muted">
+                        {getRoleLabel(item.role)} - {getTeamGroupLabels(assignedTeams)}
+                      </p>
+                    </div>
+                    <div className="user-summary-meta">
+                      <span className={isBlocked ? "status-danger" : "status-ok"}>
+                        {isBlocked ? "Gesperrt" : "Aktiv"}
+                      </span>
+                    </div>
+                  </summary>
                   <div className="user-row-main">
                     <div>
-                      <h3>{item.email}</h3>
                       <p className="muted">
-                        {getRoleLabel(item.role)} · {getTeamGroupLabels(assignedTeams)} · Erstellt{" "}
+                        Erstellt{" "}
                         {new Date(item.createdAt).toLocaleString("de-DE")}
                       </p>
                       <p className={isBlocked ? "status-danger" : "status-ok"}>
@@ -319,7 +352,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                       ) : null}
                     </div>
                   </div>
-                </article>
+                </details>
               );
             })}
           </div>
@@ -331,14 +364,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             {auditLogEntries.length > 0 ? (
               <div className="audit-log-list">
                 {auditLogEntries.map((entry) => (
-                  <article className="audit-log-row" key={entry.id}>
-                    <div>
+                  <details className="audit-log-row data-details" key={entry.id}>
+                    <summary className="data-row-summary">
+                      <div>
+                        <h3>{entry.details}</h3>
+                        <p className="muted">{new Date(entry.createdAt).toLocaleString("de-DE")}</p>
+                      </div>
+                    </summary>
+                    <div className="data-row-body">
                       <h3>{entry.details}</h3>
                       <p className="muted">
                         {entry.actorEmail} {"->"} {entry.targetEmail} · {new Date(entry.createdAt).toLocaleString("de-DE")}
                       </p>
                     </div>
-                  </article>
+                  </details>
                 ))}
               </div>
             ) : (

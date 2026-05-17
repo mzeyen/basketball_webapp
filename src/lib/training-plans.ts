@@ -19,12 +19,20 @@ export const trainingPlanCategories = ["u10", "u12", "u14", "u16", "u19", "damen
 
 export type TrainingPlanCategory = (typeof trainingPlanCategories)[number];
 
+export type TrainingPlanExerciseDetail = {
+  exerciseId: string;
+  durationMinutes?: number;
+  material?: string;
+  notes?: string;
+};
+
 export type TrainingPlan = {
   id: string;
   title: string;
   category?: TrainingPlanCategory;
   team?: TeamGroup | null;
   sourceExerciseIds?: string[];
+  sourceExerciseDetails?: TrainingPlanExerciseDetail[];
   originalFileName: string;
   storedFileName: string;
   mimeType: string;
@@ -111,25 +119,41 @@ function getTrainingPlanCategoryLabel(category: TrainingPlanCategory): string {
   return labels[category];
 }
 
+type GeneratedTrainingPlanExercise = {
+  exercise: TrainingExercise;
+  durationMinutes?: number;
+  material?: string;
+  notes?: string;
+};
+
 function buildGeneratedTrainingPlanHtml(input: {
   title: string;
   category: TrainingPlanCategory;
   team?: TeamGroup | null;
-  exercises: TrainingExercise[];
+  exercises: GeneratedTrainingPlanExercise[];
   createdAt: string;
 }): string {
   const exerciseItems = input.exercises
-    .map((exercise, index) => {
+    .map((item, index) => {
+      const { exercise } = item;
       const tags = exercise.tags.length > 0 ? exercise.tags.map(escapeHtml).join(", ") : "Keine Tags";
       const description = exercise.description.trim()
         ? `<p>${escapeHtml(exercise.description).replaceAll("\n", "<br />")}</p>`
         : "<p>Keine Beschreibung hinterlegt.</p>";
+      const duration = item.durationMinutes ? `${item.durationMinutes} Minuten` : "Nicht festgelegt";
+      const material = item.material?.trim() ? escapeHtml(item.material) : "Nicht festgelegt";
+      const notes = item.notes?.trim()
+        ? `<p class="notes">${escapeHtml(item.notes).replaceAll("\n", "<br />")}</p>`
+        : "";
 
       return `<section class="exercise">
         <p class="eyebrow">Übung ${index + 1}</p>
         <h2>${escapeHtml(exercise.title)}</h2>
         ${description}
+        ${notes}
         <dl>
+          <div><dt>Dauer</dt><dd>${duration}</dd></div>
+          <div><dt>Material</dt><dd>${material}</dd></div>
           <div><dt>Team</dt><dd>${escapeHtml(getTeamGroupLabel(exercise.team))}</dd></div>
           <div><dt>Tags</dt><dd>${tags}</dd></div>
           <div><dt>Datei</dt><dd>${escapeHtml(exercise.originalFileName)}</dd></div>
@@ -153,6 +177,7 @@ function buildGeneratedTrainingPlanHtml(input: {
       .exercise { border: 1px solid #d8deea; border-radius: 12px; margin: 16px 0; padding: 18px; break-inside: avoid; }
       .exercise h2 { font-size: 22px; margin-bottom: 10px; }
       .exercise p { margin-bottom: 14px; }
+      .notes { background: #f3f6fb; border-radius: 10px; padding: 12px; }
       dl { display: grid; gap: 8px; margin: 0; }
       dl div { display: grid; gap: 4px; grid-template-columns: 120px 1fr; }
       dt { font-weight: 700; }
@@ -275,7 +300,7 @@ export async function createTrainingPlanFromExercises(input: {
   title: string;
   category: TrainingPlanCategory;
   team?: TeamGroup | null;
-  exercises: TrainingExercise[];
+  exercises: GeneratedTrainingPlanExercise[];
   uploadedBy: string;
 }): Promise<TrainingPlan> {
   if (input.exercises.length === 0) {
@@ -299,7 +324,13 @@ export async function createTrainingPlanFromExercises(input: {
     title: input.title,
     category: input.category,
     team: input.team ?? null,
-    sourceExerciseIds: input.exercises.map((exercise) => exercise.id),
+    sourceExerciseIds: input.exercises.map((item) => item.exercise.id),
+    sourceExerciseDetails: input.exercises.map((item) => ({
+      exerciseId: item.exercise.id,
+      durationMinutes: item.durationMinutes,
+      material: item.material,
+      notes: item.notes,
+    })),
     originalFileName: `${slugifyFileName(input.title)}.html`,
     storedFileName,
     mimeType: "text/html",

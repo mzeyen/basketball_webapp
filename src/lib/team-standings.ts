@@ -1,7 +1,8 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 
-import { teamGroups, type TeamGroup } from "@/lib/teams";
+import { listTeamGroups } from "@/lib/team-store";
+import type { TeamGroup } from "@/lib/teams";
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const standingsCacheFile = path.join(dataDirectory, "team-standings-cache.json");
@@ -86,7 +87,7 @@ async function readConfig(): Promise<ConfigShape> {
   try {
     const raw = await readFile(standingsConfigFile, "utf8");
     const parsed = JSON.parse(raw) as ConfigShape;
-    return { leagueIds: sanitizeLeagueIds(parsed.leagueIds ?? {}) };
+    return { leagueIds: await sanitizeLeagueIds(parsed.leagueIds ?? {}) };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return { leagueIds: {} };
@@ -98,10 +99,11 @@ async function readConfig(): Promise<ConfigShape> {
 
 async function writeConfig(config: ConfigShape): Promise<void> {
   await mkdir(dataDirectory, { recursive: true });
-  await writeFile(standingsConfigFile, JSON.stringify({ leagueIds: sanitizeLeagueIds(config.leagueIds) }, null, 2));
+  await writeFile(standingsConfigFile, JSON.stringify({ leagueIds: await sanitizeLeagueIds(config.leagueIds) }, null, 2));
 }
 
-function sanitizeLeagueIds(input: Partial<Record<TeamGroup, string>>): Partial<Record<TeamGroup, string>> {
+async function sanitizeLeagueIds(input: Partial<Record<TeamGroup, string>>): Promise<Partial<Record<TeamGroup, string>>> {
+  const teamGroups = await listTeamGroups();
   return Object.fromEntries(
     teamGroups
       .map((team) => [team, String(input[team] ?? "").trim()] as const)
@@ -115,6 +117,7 @@ function getApiUrl(leagueId: string): string {
 
 export async function listTeamStandingConfigs(): Promise<TeamStandingConfig[]> {
   const config = await readConfig();
+  const teamGroups = await listTeamGroups();
   return teamGroups.map((team) => ({
     team,
     leagueId: config.leagueIds[team] ?? "",
@@ -126,8 +129,9 @@ export async function updateTeamStandingConfigs(leagueIds: Partial<Record<TeamGr
 }
 
 async function refreshStandingsForConfig(config: ConfigShape): Promise<TeamStandingRefreshResult> {
-  const sanitizedLeagueIds = sanitizeLeagueIds(config.leagueIds);
+  const sanitizedLeagueIds = await sanitizeLeagueIds(config.leagueIds);
   const cache = await readCache();
+  const teamGroups = await listTeamGroups();
   const fetchedAt = new Date().toISOString();
   let refreshed = 0;
   const failed: TeamStandingRefreshResult["failed"] = [];
@@ -168,7 +172,7 @@ export async function refreshConfiguredTeamStandings(): Promise<TeamStandingRefr
 export async function updateTeamStandingConfigsAndRefresh(
   leagueIds: Partial<Record<TeamGroup, string>>,
 ): Promise<TeamStandingRefreshResult> {
-  const config = { leagueIds: sanitizeLeagueIds(leagueIds) };
+  const config = { leagueIds: await sanitizeLeagueIds(leagueIds) };
   await writeConfig(config);
   return refreshStandingsForConfig(config);
 }

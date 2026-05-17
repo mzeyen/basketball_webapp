@@ -7,7 +7,8 @@ import { createCalendarEventAction, deleteCalendarEventAction } from "@/lib/cale
 import { listCalendarEvents } from "@/lib/calendar-events";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { canAccessAdmin } from "@/lib/rbac/roles";
-import { getTeamGroupLabel, isTeamGroup, teamGroups, type TeamGroup } from "@/lib/teams";
+import { listTeamGroups } from "@/lib/team-store";
+import { getTeamGroupLabel, isTeamGroup, type TeamGroup } from "@/lib/teams";
 import { listTrainingPlans } from "@/lib/training-plans";
 
 type CalendarPageProps = {
@@ -85,7 +86,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   const params = await searchParams;
   const selectedTeam = isTeamGroup(params.team ?? "") ? params.team as TeamGroup : undefined;
   const monthRange = getMonthRange(params.month);
-  const [user, users, trainingPlans, events] = await Promise.all([
+  const [user, users, trainingPlans, events, teamGroups] = await Promise.all([
     findUserById(session.userId),
     listUsers(),
     listTrainingPlans(),
@@ -94,6 +95,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
       to: monthRange.to.toISOString(),
       team: selectedTeam,
     }),
+    listTeamGroups(),
   ]);
 
   if (!user) {
@@ -204,10 +206,19 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
                 const trainingPlan = event.trainingPlanId ? trainingPlansById.get(event.trainingPlanId) : null;
 
                 return (
-                  <article className="calendar-event-row" key={event.id}>
-                    <div>
+                  <details className="calendar-event-row data-details" key={event.id}>
+                    <summary className="data-row-summary">
+                      <div>
+                        <p className="upload-kind">{getTeamGroupLabel(event.team)}</p>
+                        <h3>{event.title}</h3>
+                        <p className="muted">
+                          {formatDateTime(event.startsAt)}
+                          {event.endsAt ? ` bis ${formatDateTime(event.endsAt)}` : ""}
+                        </p>
+                      </div>
+                    </summary>
+                    <div className="data-row-body">
                       <p className="upload-kind">{getTeamGroupLabel(event.team)}</p>
-                      <h3>{event.title}</h3>
                       <p className="muted">
                         {formatDateTime(event.startsAt)}
                         {event.endsAt ? ` bis ${formatDateTime(event.endsAt)}` : ""} · Erstellt von{" "}
@@ -229,7 +240,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
                         </button>
                       </form>
                     ) : null}
-                  </article>
+                  </details>
                 );
               })}
             </div>

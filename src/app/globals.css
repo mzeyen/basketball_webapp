@@ -284,6 +284,55 @@ main {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.public-dashboard-hero {
+  display: grid;
+  min-height: 26rem;
+  place-items: center start;
+}
+
+.public-dashboard-hero h1 {
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  line-height: 0.98;
+  max-width: 820px;
+}
+
+.public-dashboard-hero p {
+  max-width: 720px;
+}
+
+.public-dashboard-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.public-dashboard-feature {
+  box-shadow: none;
+}
+
+.public-dashboard-feature h2,
+.public-dashboard-feature p {
+  margin: 0.2rem 0;
+}
+
+.public-feature-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.public-feature-list div {
+  background: var(--subtle-background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem;
+}
+
+.public-feature-list span {
+  color: var(--muted);
+}
+
 .dashboard-recent-list {
   display: grid;
   gap: 0.75rem;
@@ -300,6 +349,63 @@ main {
 .dashboard-recent-row h3,
 .dashboard-recent-row p {
   margin: 0.2rem 0;
+}
+
+.data-details {
+  display: grid;
+  gap: 0;
+}
+
+.data-details[open] {
+  gap: 0.85rem;
+}
+
+.data-row-summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.data-row-summary::-webkit-details-marker {
+  display: none;
+}
+
+.data-row-summary::after {
+  color: var(--muted);
+  content: "Öffnen";
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.data-details[open] .data-row-summary::after {
+  content: "Schließen";
+}
+
+.data-row-body {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.collapsible-card {
+  display: grid;
+}
+
+.collapsible-card[open] {
+  gap: 1rem;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
 .account-summary {
@@ -427,6 +533,12 @@ textarea {
   padding: 1rem;
 }
 
+details.training-plan-row,
+details.calendar-event-row {
+  align-items: stretch;
+  display: grid;
+}
+
 .training-plan-main {
   display: grid;
   gap: 1rem;
@@ -472,6 +584,70 @@ textarea {
   color: var(--muted);
 }
 
+.plan-builder {
+  display: grid;
+  gap: 1rem;
+}
+
+.selected-exercise-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.selected-exercise-row {
+  background: var(--subtle-background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  cursor: grab;
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.selected-exercise-row:active {
+  cursor: grabbing;
+}
+
+.selected-exercise-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.selected-exercise-heading h3,
+.selected-exercise-heading p {
+  margin: 0.2rem 0;
+}
+
+.selected-exercise-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selected-exercise-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(120px, 0.35fr) minmax(180px, 0.65fr);
+}
+
+.selected-exercise-notes {
+  grid-column: 1 / -1;
+}
+
+.exercise-media-preview {
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: block;
+  margin-top: 0.75rem;
+  max-height: 360px;
+  max-width: 100%;
+  object-fit: contain;
+  width: min(100%, 520px);
+}
+
 .upload-overview-list {
   display: grid;
   gap: 0.85rem;
@@ -486,6 +662,11 @@ textarea {
   gap: 1rem;
   justify-content: space-between;
   padding: 1rem;
+}
+
+details.upload-overview-row {
+  align-items: stretch;
+  display: grid;
 }
 
 .upload-overview-row h3,
@@ -529,6 +710,11 @@ textarea {
   gap: 1rem;
   justify-content: space-between;
   padding: 1rem;
+}
+
+details.calendar-event-row {
+  align-items: stretch;
+  display: grid;
 }
 
 .calendar-event-row h3,
@@ -732,6 +918,43 @@ textarea {
   padding: 1rem;
 }
 
+.user-row[open] {
+  display: grid;
+  gap: 1rem;
+}
+
+.user-row-summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.user-row-summary::-webkit-details-marker {
+  display: none;
+}
+
+.user-row-summary::after {
+  color: var(--muted);
+  content: "Öffnen";
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.user-row[open] .user-row-summary::after {
+  content: "Schließen";
+}
+
+.user-summary-meta {
+  align-items: flex-end;
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+  justify-items: end;
+}
+
 .user-row-main {
   display: grid;
   gap: 1rem;
@@ -747,6 +970,15 @@ textarea {
   align-content: start;
   display: grid;
   gap: 0.75rem;
+}
+
+.user-actions form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.user-actions button {
+  justify-self: start;
 }
 
 .password-reset-form {
@@ -769,6 +1001,17 @@ textarea {
 .team-multi-help {
   font-size: 0.9rem;
   margin: -0.25rem 0 0;
+}
+
+.admin-team-create-form {
+  align-items: end;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(220px, 1fr) auto;
+}
+
+.admin-team-create-form button {
+  align-self: end;
 }
 
 .standings-config-form {
@@ -799,8 +1042,13 @@ textarea {
     justify-content: stretch;
   }
 
-.standings-config-actions button {
+  .standings-config-actions button,
+  .admin-team-create-form button {
     width: 100%;
+  }
+
+  .admin-team-create-form {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -922,6 +1170,21 @@ textarea {
   }
 
   .user-row-main {
+    grid-template-columns: 1fr;
+  }
+
+  .user-row-summary {
+    align-items: flex-start;
+  }
+
+  .user-summary-meta {
+    align-items: flex-start;
+    justify-items: start;
+  }
+
+  .selected-exercise-heading,
+  .selected-exercise-fields {
+    display: grid;
     grid-template-columns: 1fr;
   }
 }

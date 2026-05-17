@@ -1,14 +1,35 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { AppHeader } from "@/components/AppHeader";
+import { ClubBrand } from "@/components/ClubBrand";
+import { getCurrentSession } from "@/lib/auth/session";
 import { TeamStandingsWidget } from "@/components/TeamStandingsWidget";
-import { requireUserSession } from "@/lib/auth/session";
 import { listCalendarEvents } from "@/lib/calendar-events";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { getTeamStandings, listTeamStandingConfigs } from "@/lib/team-standings";
 import { getTeamGroupLabel } from "@/lib/teams";
 import { listTrainingExercises } from "@/lib/training-exercises";
 import { listTrainingPlans } from "@/lib/training-plans";
+
+const dashboardHighlights = [
+  {
+    title: "Training zentral planen",
+    text: "Trainingspläne hochladen, aus Übungen zusammenstellen und mit Terminen verknüpfen.",
+  },
+  {
+    title: "Übungen mit Medien",
+    text: "Übungen speichern, taggen und mit Bildern oder Videos für Trainer und Teams verständlich machen.",
+  },
+  {
+    title: "Teams und Termine",
+    text: "Eigene Teams wie u12-2 anlegen, Kalender pflegen und relevante Inhalte nach Mannschaft filtern.",
+  },
+  {
+    title: "Tabellen im Blick",
+    text: "Liga-IDs hinterlegen und Tabellen automatisch aus basketball-bund.net anzeigen lassen.",
+  },
+];
 
 type RecentUpload = {
   createdBy: string;
@@ -30,10 +51,64 @@ function formatTime(value: string): string {
 }
 
 export default async function DashboardPage() {
-  const session = await requireUserSession().catch(() => null);
+  const session = await getCurrentSession();
 
   if (!session) {
-    redirect("/login");
+    return (
+      <>
+        <AppHeader />
+        <main className="stack">
+          <section className="card public-dashboard-hero">
+            <div>
+              <ClubBrand className="hero-brand" size="large" />
+              <p className="eyebrow">CourtControl Dashboard</p>
+              <h1>Alles für dein Basketballteam an einem Ort.</h1>
+              <p className="muted">
+                Plane Trainings, verwalte Übungen, organisiere Termine und halte Teams mit Tabellen und Dokumenten auf dem aktuellen Stand.
+              </p>
+              <div className="hero-actions">
+                <Link href="/register" className="secondary-button">
+                  Konto erstellen
+                </Link>
+                <Link href="/login">Anmelden</Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="public-dashboard-grid">
+            {dashboardHighlights.map((highlight) => (
+              <article className="card public-dashboard-feature" key={highlight.title}>
+                <h2>{highlight.title}</h2>
+                <p className="muted">{highlight.text}</p>
+              </article>
+            ))}
+          </section>
+
+          <section className="card stack">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Funktionen</p>
+                <h2>Was angemeldete Nutzer bekommen</h2>
+              </div>
+            </div>
+            <div className="public-feature-list">
+              <div>
+                <strong>Kalender</strong>
+                <span>Trainingstermine mit Team, Ort, Notizen und Trainingsplan-Verknüpfung.</span>
+              </div>
+              <div>
+                <strong>Trainingsbibliothek</strong>
+                <span>Pläne, Übungen, Medien, Tags und geschützte Downloads.</span>
+              </div>
+              <div>
+                <strong>Adminbereich</strong>
+                <span>Nutzer, Teams, Liga-IDs, Vereinslogo und Änderungsprotokoll verwalten.</span>
+              </div>
+            </div>
+          </section>
+        </main>
+      </>
+    );
   }
 
   const now = new Date();
@@ -92,15 +167,20 @@ export default async function DashboardPage() {
             {recentUploads.length > 0 ? (
               <div className="dashboard-recent-list">
                 {recentUploads.map((upload) => (
-                  <article className="dashboard-recent-row" key={`${upload.kind}-${upload.title}-${upload.uploadedAt}`}>
-                    <div>
+                  <details className="dashboard-recent-row data-details" key={`${upload.kind}-${upload.title}-${upload.uploadedAt}`}>
+                    <summary className="data-row-summary">
+                      <div>
+                        <p className="upload-kind">{upload.kind}</p>
+                        <h3>{upload.title}</h3>
+                      </div>
+                    </summary>
+                    <div className="data-row-body">
                       <p className="upload-kind">{upload.kind}</p>
-                      <h3>{upload.title}</h3>
                       <p className="muted">
                         Erstellt von {upload.createdBy} · {new Date(upload.uploadedAt).toLocaleString("de-DE")}
                       </p>
                     </div>
-                  </article>
+                  </details>
                 ))}
               </div>
             ) : (
@@ -147,10 +227,18 @@ export default async function DashboardPage() {
                 const trainingPlan = event.trainingPlanId ? trainingPlansById.get(event.trainingPlanId) : null;
 
                 return (
-                  <article className="calendar-widget-event" key={event.id}>
-                    <div>
+                  <details className="calendar-widget-event data-details" key={event.id}>
+                    <summary className="data-row-summary">
+                      <div>
+                        <p className="upload-kind">{getTeamGroupLabel(event.team)}</p>
+                        <h3>{event.title}</h3>
+                        <p className="muted">
+                          {new Date(event.startsAt).toLocaleDateString("de-DE")} - {formatTime(event.startsAt)}
+                        </p>
+                      </div>
+                    </summary>
+                    <div className="data-row-body">
                       <p className="upload-kind">{getTeamGroupLabel(event.team)}</p>
-                      <h3>{event.title}</h3>
                       <p className="muted">
                         {new Date(event.startsAt).toLocaleDateString("de-DE")} · {formatTime(event.startsAt)} ·{" "}
                         {creator?.name || creator?.email || "Unbekannt"}
@@ -161,7 +249,7 @@ export default async function DashboardPage() {
                         </a>
                       ) : null}
                     </div>
-                  </article>
+                  </details>
                 );
               })}
             </div>

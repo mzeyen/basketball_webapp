@@ -187,10 +187,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           {recentUploads.length > 0 ? (
             <div className="upload-overview-list">
               {recentUploads.map((upload) => (
-                <article className="upload-overview-row" key={`${upload.kind}-${upload.href}`}>
-                  <div>
+                <details className="upload-overview-row data-details" key={`${upload.kind}-${upload.href}`}>
+                  <summary className="data-row-summary">
+                    <div>
+                      <p className="upload-kind">{upload.kind}</p>
+                      <h3>{upload.title}</h3>
+                      <p className="muted">{upload.meta}</p>
+                    </div>
+                  </summary>
+                  <div className="data-row-body">
                     <p className="upload-kind">{upload.kind}</p>
-                    <h3>{upload.title}</h3>
                     <p className="muted">
                       {upload.meta} · {new Date(upload.uploadedAt).toLocaleString("de-DE")}
                     </p>
@@ -199,7 +205,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
                   <Link href={upload.href} className="secondary-button" target="_blank">
                     Anzeigen
                   </Link>
-                </article>
+                </details>
               ))}
             </div>
           ) : (

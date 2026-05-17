@@ -25,6 +25,11 @@ function getStrings(formData: FormData, key: string): string[] {
   return formData.getAll(key).map((value) => String(value).trim()).filter(Boolean);
 }
 
+function getOptionalPositiveInteger(formData: FormData, key: string): number | undefined {
+  const value = Number(getString(formData, key));
+  return Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
 export async function uploadTrainingPlanAction(formData: FormData): Promise<void> {
   const session = await requireUserSession().catch(() => null);
 
@@ -88,7 +93,12 @@ export async function createTrainingPlanFromExercisesAction(formData: FormData):
     title,
     category,
     team: isTeamGroup(team) ? team : null,
-    exercises,
+    exercises: exercises.map((exercise) => ({
+      exercise,
+      durationMinutes: getOptionalPositiveInteger(formData, `durationMinutes:${exercise.id}`),
+      material: getString(formData, `material:${exercise.id}`) || undefined,
+      notes: getString(formData, `notes:${exercise.id}`) || undefined,
+    })),
     uploadedBy: session.userId,
   });
 

@@ -13,7 +13,18 @@ const allowedFileTypes = new Map([
   ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"],
 ]);
 
+const allowedMediaTypes = new Map([
+  ["image/jpeg", ".jpg"],
+  ["image/png", ".png"],
+  ["image/webp", ".webp"],
+  ["image/gif", ".gif"],
+  ["video/mp4", ".mp4"],
+  ["video/webm", ".webm"],
+  ["video/quicktime", ".mov"],
+]);
+
 export const maxTrainingExerciseFileSize = 25 * 1024 * 1024;
+export const maxTrainingExerciseMediaSize = 100 * 1024 * 1024;
 export const maxTrainingExerciseTags = 12;
 
 export type TrainingExercise = {
@@ -26,6 +37,10 @@ export type TrainingExercise = {
   storedFileName: string;
   mimeType: string;
   size: number;
+  mediaOriginalFileName?: string;
+  mediaStoredFileName?: string;
+  mediaMimeType?: string;
+  mediaSize?: number;
   uploadedBy: string;
   uploadedAt: string;
 };
@@ -42,12 +57,28 @@ export function getTrainingExerciseExtension(file: File): string | null {
   return allowedFileTypes.get(file.type) ?? null;
 }
 
+export function isAllowedTrainingExerciseMedia(file: File): boolean {
+  return allowedMediaTypes.has(file.type);
+}
+
+export function getTrainingExerciseMediaExtension(file: File): string | null {
+  return allowedMediaTypes.get(file.type) ?? null;
+}
+
 export function getTrainingExerciseFilePath(exercise: TrainingExercise): string {
   return path.join(trainingExercisesDirectory, exercise.storedFileName);
 }
 
+export function getTrainingExerciseMediaPath(exercise: TrainingExercise): string | null {
+  return exercise.mediaStoredFileName ? path.join(trainingExercisesDirectory, exercise.mediaStoredFileName) : null;
+}
+
 export function getTrainingExerciseContentType(exercise: TrainingExercise): string {
   return exercise.mimeType;
+}
+
+export function getTrainingExerciseMediaContentType(exercise: TrainingExercise): string | null {
+  return exercise.mediaMimeType ?? null;
 }
 
 export function normalizeExerciseTags(value: string): string[] {
@@ -144,6 +175,18 @@ export async function deleteTrainingExercise(id: string): Promise<TrainingExerci
     }
   }
 
+  const mediaPath = getTrainingExerciseMediaPath(exercise);
+
+  if (mediaPath) {
+    try {
+      await unlink(mediaPath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw error;
+      }
+    }
+  }
+
   return exercise;
 }
 
@@ -153,6 +196,7 @@ export async function createTrainingExercise(input: {
   tags: string[];
   team?: TeamGroup | null;
   file: File;
+  mediaFile?: File | null;
   uploadedBy: string;
 }): Promise<TrainingExercise> {
   const extension = getTrainingExerciseExtension(input.file);
@@ -161,9 +205,17 @@ export async function createTrainingExercise(input: {
     throw new Error("Unsupported training exercise file type");
   }
 
+  const mediaExtension = input.mediaFile && input.mediaFile.size > 0 ? getTrainingExerciseMediaExtension(input.mediaFile) : null;
+
+  if (input.mediaFile && input.mediaFile.size > 0 && !mediaExtension) {
+    throw new Error("Unsupported training exercise media type");
+  }
+
   const id = randomUUID();
   const storedFileName = `${id}${extension}`;
+  const mediaStoredFileName = input.mediaFile && mediaExtension ? `${id}-media${mediaExtension}` : undefined;
   const buffer = Buffer.from(await input.file.arrayBuffer());
+  const mediaBuffer = input.mediaFile && mediaStoredFileName ? Buffer.from(await input.mediaFile.arrayBuffer()) : null;
   const now = new Date().toISOString();
   const database = await readTrainingExercisesDatabase();
   const exercise: TrainingExercise = {
@@ -176,12 +228,19 @@ export async function createTrainingExercise(input: {
     storedFileName,
     mimeType: input.file.type,
     size: input.file.size,
+    mediaOriginalFileName: input.mediaFile && mediaStoredFileName ? input.mediaFile.name : undefined,
+    mediaStoredFileName,
+    mediaMimeType: input.mediaFile && mediaStoredFileName ? input.mediaFile.type : undefined,
+    mediaSize: input.mediaFile && mediaStoredFileName ? input.mediaFile.size : undefined,
     uploadedBy: input.uploadedBy,
     uploadedAt: now,
   };
 
   await mkdir(trainingExercisesDirectory, { recursive: true });
   await writeFile(path.join(trainingExercisesDirectory, storedFileName), buffer);
+  if (mediaBuffer && mediaStoredFileName) {
+    await writeFile(path.join(trainingExercisesDirectory, mediaStoredFileName), mediaBuffer);
+  }
 
   database.trainingExercises.push(exercise);
   await writeTrainingExercisesDatabase(database);

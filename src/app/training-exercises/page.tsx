@@ -9,10 +9,12 @@ import {
   listTrainingExercises,
   listTrainingExerciseTags,
   maxTrainingExerciseFileSize,
+  maxTrainingExerciseMediaSize,
   maxTrainingExerciseTags,
 } from "@/lib/training-exercises";
 import { canAccessAdmin } from "@/lib/rbac/roles";
-import { getTeamGroupLabel, isTeamGroup, teamGroups, type TeamGroup } from "@/lib/teams";
+import { listTeamGroups } from "@/lib/team-store";
+import { getTeamGroupLabel, isTeamGroup, type TeamGroup } from "@/lib/teams";
 
 type TrainingExercisesPageProps = {
   searchParams: Promise<{
@@ -39,6 +41,22 @@ function getFileTypeLabel(mimeType: string): string {
   return "Word";
 }
 
+function getMediaTypeLabel(mimeType?: string): string {
+  if (!mimeType) {
+    return "Keine Medien";
+  }
+
+  if (mimeType.startsWith("image/")) {
+    return "Bild";
+  }
+
+  if (mimeType.startsWith("video/")) {
+    return "Video";
+  }
+
+  return "Medien";
+}
+
 export default async function TrainingExercisesPage({ searchParams }: TrainingExercisesPageProps) {
   const session = await requireUserSession().catch(() => null);
 
@@ -49,7 +67,7 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
   const params = await searchParams;
   const selectedTag = params.tag?.trim().toLowerCase();
   const selectedTeam = isTeamGroup(params.team ?? "") ? params.team as TeamGroup : undefined;
-  const [user, trainingExercises, tags, users] = await Promise.all([
+  const [user, trainingExercises, tags, users, teamGroups] = await Promise.all([
     findUserById(session.userId),
     listTrainingExercises({
       query: params.q,
@@ -59,6 +77,7 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
     }),
     listTrainingExerciseTags(),
     listUsers(),
+    listTeamGroups(),
   ]);
 
   if (!user) {
@@ -80,12 +99,19 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
           </p>
         </section>
 
-        <section className="card stack">
-          <h2>Übung hochladen</h2>
+        <details className="card stack collapsible-card">
+          <summary className="data-row-summary">
+            <div>
+              <h2>Übung hochladen</h2>
+              <p className="muted">Datei, Beschreibung, Tags und optional Bild oder Video speichern.</p>
+            </div>
+          </summary>
+          <div className="data-row-body">
+          <h2 className="visually-hidden">Übung hochladen</h2>
           {params.error === "invalid-upload" ? (
             <p className="form-error">
               Bitte lade eine PDF-, DOC- oder DOCX-Datei bis {formatFileSize(maxTrainingExerciseFileSize)} mit Titel und
-              mindestens einem Tag hoch.
+              mindestens einem Tag hoch. Bilder oder Videos duerfen maximal {formatFileSize(maxTrainingExerciseMediaSize)} gross sein.
             </p>
           ) : null}
           {params.error === "invalid-delete" ? (
@@ -136,10 +162,22 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
                 required
               />
             </label>
-            <p className="muted">Maximale Dateigröße: {formatFileSize(maxTrainingExerciseFileSize)}.</p>
+            <label>
+              Bild oder Video
+              <input
+                name="mediaFile"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov"
+              />
+            </label>
+            <p className="muted">
+              Maximale Dateigroesse: {formatFileSize(maxTrainingExerciseFileSize)}. Medien:{" "}
+              {formatFileSize(maxTrainingExerciseMediaSize)}.
+            </p>
             <button type="submit">Übung speichern</button>
           </form>
-        </section>
+          </div>
+        </details>
 
         <section className="card stack">
           <div className="section-heading">
@@ -207,8 +245,16 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
           {trainingExercises.length > 0 ? (
             <div className="training-plan-list">
               {trainingExercises.map((exercise) => (
-                <article className="training-plan-row" key={exercise.id}>
-                  <div className="training-plan-main">
+                <details className="training-plan-row data-details" key={exercise.id}>
+                  <summary className="data-row-summary">
+                    <div>
+                      <h3>{exercise.title}</h3>
+                      <p className="muted">
+                        {getFileTypeLabel(exercise.mimeType)} - {formatFileSize(exercise.size)}
+                      </p>
+                    </div>
+                  </summary>
+                  <div className="training-plan-main data-row-body">
                     <div>
                       <h3>{exercise.title}</h3>
                       <p className="muted">
@@ -223,6 +269,24 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
                       </p>
                       {exercise.description ? <p>{exercise.description}</p> : null}
                       <p className="muted">{exercise.originalFileName}</p>
+                      {exercise.mediaOriginalFileName ? (
+                        <p className="muted">
+                          {getMediaTypeLabel(exercise.mediaMimeType)} - {formatFileSize(exercise.mediaSize ?? 0)} -{" "}
+                          {exercise.mediaOriginalFileName}
+                        </p>
+                      ) : null}
+                      {exercise.mediaMimeType?.startsWith("image/") ? (
+                        <img
+                          alt={`Medienvorschau von ${exercise.title}`}
+                          className="exercise-media-preview"
+                          src={`/training-exercises/media/${exercise.id}`}
+                        />
+                      ) : null}
+                      {exercise.mediaMimeType?.startsWith("video/") ? (
+                        <video className="exercise-media-preview" controls preload="metadata">
+                          <source src={`/training-exercises/media/${exercise.id}`} type={exercise.mediaMimeType} />
+                        </video>
+                      ) : null}
                       <div className="tag-list compact-tags">
                         {exercise.tags.map((tag) => (
                           <Link key={tag} href={`/training-exercises?tag=${encodeURIComponent(tag)}`} className="tag-pill">
@@ -255,7 +319,7 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
                       </Link>
                     </div>
                   </div>
-                </article>
+                </details>
               ))}
             </div>
           ) : (
