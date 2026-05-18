@@ -52,7 +52,7 @@ export async function loginAction(formData: FormData): Promise<void> {
   }
 
   await setSessionCookie(user.id, user.role);
-  redirect("/dashboard");
+  redirect("/");
 }
 
 export async function logoutAction(): Promise<void> {

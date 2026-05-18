@@ -16,7 +16,7 @@ export async function updateTeamStandingConfigsAction(formData: FormData): Promi
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const teamGroups = await listTeamGroups();
@@ -33,7 +33,7 @@ export async function updateTeamStandingConfigsAction(formData: FormData): Promi
   const result = await updateTeamStandingConfigsAndRefresh(leagueIds);
 
   revalidatePath("/admin");
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   redirect(result.failed.length > 0 ? "/admin?updated=standings-config-partial" : "/admin?updated=standings-config");
 }
 
@@ -41,7 +41,7 @@ export async function createTeamGroupAction(formData: FormData): Promise<void> {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const team = getString(formData, "team");
@@ -53,7 +53,7 @@ export async function createTeamGroupAction(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/admin");
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   revalidatePath("/calendar");
   revalidatePath("/training-plans");
   revalidatePath("/training-exercises");

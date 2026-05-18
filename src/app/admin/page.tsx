@@ -116,7 +116,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   const [user, users, standingsConfigs, brandingState, teamGroups, params] = await Promise.all([

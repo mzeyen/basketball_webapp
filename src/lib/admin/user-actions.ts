@@ -31,7 +31,7 @@ export async function blockUserAction(formData: FormData): Promise<void> {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const userId = getString(formData, "userId");
@@ -72,7 +72,7 @@ export async function unblockUserAction(formData: FormData): Promise<void> {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const userId = getString(formData, "userId");
@@ -109,7 +109,7 @@ export async function resetUserPasswordAction(formData: FormData): Promise<void>
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const userId = getString(formData, "userId");
@@ -151,7 +151,7 @@ export async function updateUserRoleAction(formData: FormData): Promise<void> {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const userId = getString(formData, "userId");
@@ -192,7 +192,7 @@ export async function updateUserEmailAction(formData: FormData): Promise<void> {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const userId = getString(formData, "userId");
@@ -233,7 +233,7 @@ export async function deleteUserAction(formData: FormData): Promise<void> {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const userId = getString(formData, "userId");
@@ -268,7 +268,7 @@ export async function updateUserTeamAction(formData: FormData): Promise<void> {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const userId = getString(formData, "userId");
@@ -305,7 +305,7 @@ export async function updateClubLogoAction(formData: FormData): Promise<void> {
   const session = await requireAdminSession().catch(() => null);
 
   if (!session) {
-    redirect("/dashboard?error=forbidden");
+    redirect("/?error=forbidden");
   }
 
   const actor = await findUserById(session.userId);
@@ -356,7 +356,7 @@ export async function updateClubLogoAction(formData: FormData): Promise<void> {
   });
 
   revalidatePath("/");
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin?updated=logo");
 }

@@ -25,6 +25,6 @@ export async function updateProfileNameAction(formData: FormData): Promise<void>
 
   await updateUserName(session.userId, name || null);
   revalidatePath("/profile");
-  revalidatePath("/dashboard");
+  revalidatePath("/");
   redirect("/profile?updated=name");
 }
