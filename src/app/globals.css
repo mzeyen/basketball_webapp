@@ -624,11 +624,9 @@ details.calendar-event-row {
 }
 
 .court-diagram-background {
-  background: #ffffff url("/court/basketball-court-reference.svg") center / contain no-repeat;
+  background: #ffffff url("/court/basketballfeld_fiba.png") center / contain no-repeat;
   inset: 0;
   position: absolute;
-  transform: rotate(90deg) scale(1.00001);
-  transform-origin: center;
 }
 
 .court-half,

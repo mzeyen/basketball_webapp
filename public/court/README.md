@@ -1,5 +1,5 @@
 # Court Diagram Asset
 
-`basketball-court-reference.svg` is the versioned basketball court background used by the app for training exercise diagrams.
+`basketballfeld_fiba.png` is the versioned basketball court background used by the app for training exercise diagrams.
 
-It is a local SVG court layout aligned to the full-court reference image provided in the project conversation and stored here so it is tracked by Git.
+The file is stored here so it is tracked by Git and used directly by the UI as the court background.

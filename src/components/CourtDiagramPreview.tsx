@@ -55,10 +55,7 @@ function clampCoordinate(value: number | undefined): number {
 }
 
 function rotateCourtPoint(x: number, y: number): { x: number; y: number } {
-  return {
-    x: y,
-    y: 100 - x,
-  };
+  return { x, y };
 }
 
 export function CourtDiagramPreview({ exercise }: { exercise: TrainingExercise }) {

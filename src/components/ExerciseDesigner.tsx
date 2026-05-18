@@ -209,17 +209,11 @@ function getPathDirectionHandlePosition(path: CourtPath): { x: number; y: number
 }
 
 function rotateCourtPoint(x: number, y: number): { x: number; y: number } {
-  return {
-    x: y,
-    y: 100 - x,
-  };
+  return { x, y };
 }
 
 function unrotateCourtPoint(x: number, y: number): { x: number; y: number } {
-  return {
-    x: 100 - y,
-    y: x,
-  };
+  return { x, y };
 }
 
 export function ExerciseDesigner() {
