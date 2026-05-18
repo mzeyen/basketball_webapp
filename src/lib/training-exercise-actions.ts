@@ -21,6 +21,19 @@ function getString(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
 }
 
+function isUploadedFile(value: FormDataEntryValue | null): value is File {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "arrayBuffer" in value &&
+    typeof value.arrayBuffer === "function" &&
+    "size" in value &&
+    typeof value.size === "number" &&
+    "type" in value &&
+    typeof value.type === "string"
+  );
+}
+
 export async function uploadTrainingExerciseAction(formData: FormData): Promise<void> {
   const session = await requireUserSession().catch(() => null);
 
@@ -39,12 +52,12 @@ export async function uploadTrainingExerciseAction(formData: FormData): Promise<
   const tags = normalizeExerciseTags(getString(formData, "tags"));
   const file = formData.get("file");
   const mediaFile = formData.get("mediaFile");
-  const hasMediaFile = mediaFile instanceof File && mediaFile.size > 0;
+  const hasMediaFile = isUploadedFile(mediaFile) && mediaFile.size > 0;
 
   if (
     title.length < 3 ||
     tags.length === 0 ||
-    !(file instanceof File) ||
+    !isUploadedFile(file) ||
     file.size === 0 ||
     file.size > maxTrainingExerciseFileSize ||
     !isAllowedTrainingExerciseFile(file) ||

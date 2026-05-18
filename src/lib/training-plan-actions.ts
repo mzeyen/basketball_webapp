@@ -30,6 +30,19 @@ function getOptionalPositiveInteger(formData: FormData, key: string): number | u
   return Number.isInteger(value) && value > 0 ? value : undefined;
 }
 
+function isUploadedFile(value: FormDataEntryValue | null): value is File {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "arrayBuffer" in value &&
+    typeof value.arrayBuffer === "function" &&
+    "size" in value &&
+    typeof value.size === "number" &&
+    "type" in value &&
+    typeof value.type === "string"
+  );
+}
+
 export async function uploadTrainingPlanAction(formData: FormData): Promise<void> {
   const session = await requireUserSession().catch(() => null);
 
@@ -45,7 +58,7 @@ export async function uploadTrainingPlanAction(formData: FormData): Promise<void
   if (
     !title ||
     !isTrainingPlanCategory(category) ||
-    !(file instanceof File) ||
+    !isUploadedFile(file) ||
     file.size === 0 ||
     file.size > maxTrainingPlanFileSize ||
     !isAllowedTrainingPlanFile(file)

@@ -21,10 +21,23 @@ function getStrings(formData: FormData, key: string): string[] {
   return formData.getAll(key).map((value) => String(value).trim()).filter(Boolean);
 }
 
+function isUploadedFile(value: FormDataEntryValue | null): value is File {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "arrayBuffer" in value &&
+    typeof value.arrayBuffer === "function" &&
+    "size" in value &&
+    typeof value.size === "number" &&
+    "type" in value &&
+    typeof value.type === "string"
+  );
+}
+
 function getFile(formData: FormData, key: string): File | null {
   const value = formData.get(key);
 
-  return value instanceof File && value.size > 0 ? value : null;
+  return isUploadedFile(value) && value.size > 0 ? value : null;
 }
 
 export async function blockUserAction(formData: FormData): Promise<void> {
