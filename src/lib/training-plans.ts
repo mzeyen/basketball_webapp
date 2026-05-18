@@ -140,6 +140,18 @@ function buildGeneratedTrainingPlanHtml(input: {
       const description = exercise.description.trim()
         ? `<p>${escapeHtml(exercise.description).replaceAll("\n", "<br />")}</p>`
         : "<p>Keine Beschreibung hinterlegt.</p>";
+      const organization = exercise.organization?.trim()
+        ? `<p><strong>Organisation:</strong> ${escapeHtml(exercise.organization).replaceAll("\n", "<br />")}</p>`
+        : "";
+      const coachingPoints = exercise.coachingPoints?.trim()
+        ? `<p><strong>Coaching:</strong> ${escapeHtml(exercise.coachingPoints).replaceAll("\n", "<br />")}</p>`
+        : "";
+      const load = exercise.load?.trim()
+        ? `<p><strong>Belastung:</strong> ${escapeHtml(exercise.load)}</p>`
+        : "";
+      const diagram = exercise.courtDiagram?.trim()
+        ? `<p class="muted"><strong>Court-Diagramm:</strong> in der Übungsbibliothek hinterlegt.</p>`
+        : "";
       const duration = item.durationMinutes ? `${item.durationMinutes} Minuten` : "Nicht festgelegt";
       const material = item.material?.trim() ? escapeHtml(item.material) : "Nicht festgelegt";
       const notes = item.notes?.trim()
@@ -149,7 +161,11 @@ function buildGeneratedTrainingPlanHtml(input: {
       return `<section class="exercise">
         <p class="eyebrow">Übung ${index + 1}</p>
         <h2>${escapeHtml(exercise.title)}</h2>
+        ${organization}
         ${description}
+        ${coachingPoints}
+        ${load}
+        ${diagram}
         ${notes}
         <dl>
           <div><dt>Dauer</dt><dd>${duration}</dd></div>

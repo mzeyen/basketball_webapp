@@ -583,6 +583,303 @@ details.calendar-event-row {
   overflow: auto;
 }
 
+.exercise-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.exercise-editor-grid,
+.plan-builder-layout,
+.plan-template-row {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+}
+
+.plan-template-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.court-editor {
+  align-content: start;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.court-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.court-diagram {
+  aspect-ratio: 1700 / 3000;
+  background: #ffffff url("/court/basketball-court-dimensions.svg") center / contain no-repeat;
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  min-height: 360px;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+}
+
+.court-half,
+.court-center-circle,
+.court-three-point,
+.court-key,
+.court-rim {
+  display: none;
+}
+
+.court-half {
+  border: 2px solid var(--border);
+  border-left: 0;
+  border-right: 0;
+  height: 50%;
+  left: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.court-top {
+  top: 0;
+}
+
+.court-center-circle {
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  height: 22%;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 34%;
+}
+
+.court-three-point {
+  border: 2px solid var(--border);
+  height: 27%;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 78%;
+}
+
+.court-three-point-top {
+  border-bottom-left-radius: 999px;
+  border-bottom-right-radius: 999px;
+  border-top: 0;
+  top: 0;
+}
+
+.court-three-point-bottom {
+  border-bottom: 0;
+  border-top-left-radius: 999px;
+  border-top-right-radius: 999px;
+  bottom: 0;
+}
+
+.court-key {
+  border: 2px solid var(--border);
+  height: 23%;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 32%;
+}
+
+.court-key-top {
+  border-top: 0;
+  top: 0;
+}
+
+.court-key-bottom {
+  border-bottom: 0;
+  bottom: 0;
+}
+
+.court-rim {
+  background: var(--primary);
+  border-radius: 999px;
+  height: 0.65rem;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 0.65rem;
+}
+
+.court-rim-top {
+  top: 7%;
+}
+
+.court-rim-bottom {
+  bottom: 7%;
+}
+
+.court-token {
+  align-items: center;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  box-shadow: 0 8px 18px var(--shadow);
+  color: #ffffff;
+  cursor: grab;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 800;
+  height: 2.1rem;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 2.1rem;
+  z-index: 2;
+}
+
+.court-token:active,
+.court-path-group:active,
+.court-path-direction-handle:active {
+  cursor: grabbing;
+}
+
+.court-path-layer {
+  inset: 0;
+  overflow: visible;
+  pointer-events: auto;
+  position: absolute;
+  z-index: 1;
+}
+
+.court-path-group {
+  cursor: grab;
+}
+
+.court-path {
+  fill: none;
+  pointer-events: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.court-path-hit {
+  fill: none;
+  pointer-events: stroke;
+  stroke: transparent;
+  stroke-linecap: round;
+  stroke-width: 9;
+  vector-effect: non-scaling-stroke;
+}
+
+.court-path-run {
+  stroke: #111827;
+}
+
+.court-path-pass {
+  stroke: #111827;
+  stroke-dasharray: 7 5;
+}
+
+.court-path-shot {
+  stroke: #111827;
+  stroke-dasharray: 1 5;
+}
+
+.court-path-layer marker {
+  fill: #111827;
+}
+
+.court-path-direction-handle {
+  color: #111827;
+  cursor: grab;
+  pointer-events: all;
+}
+
+.court-path-direction-handle circle {
+  fill: var(--surface);
+  stroke: currentColor;
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.court-path-direction-handle path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 0.65;
+  vector-effect: non-scaling-stroke;
+}
+
+.court-path-direction-handle-pass {
+  color: #111827;
+}
+
+.court-path-direction-handle-shot {
+  color: #111827;
+}
+
+.court-token-player {
+  background: #2563eb;
+}
+
+.court-token-defender {
+  background: #dc2626;
+}
+
+.court-token-ball {
+  background: #f97316;
+}
+
+.court-token-cone {
+  background: #16a34a;
+}
+
+.court-token:hover {
+  background: var(--primary-dark);
+}
+
+.court-diagram-preview {
+  margin-top: 1rem;
+  max-width: 360px;
+  min-height: 280px;
+}
+
+.exercise-picker-row .court-diagram-preview {
+  max-width: 180px;
+  min-height: 190px;
+}
+
+.selected-exercise-row .court-diagram-preview {
+  max-width: 240px;
+  min-height: 220px;
+}
+
+.court-item-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.court-item-row {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.court-path-row {
+  align-items: end;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(110px, 1fr) repeat(4, minmax(70px, 0.6fr)) auto;
+}
+
+.court-path-row input {
+  padding-left: 0.7rem;
+  padding-right: 0.7rem;
+}
+
 .exercise-picker-row {
   align-items: flex-start;
   background: var(--subtle-background);
@@ -611,6 +908,16 @@ details.calendar-event-row {
 .plan-builder {
   display: grid;
   gap: 1rem;
+}
+
+.selected-exercise-dropzone {
+  align-content: start;
+  background: var(--subtle-background);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  display: grid;
+  min-height: 420px;
+  padding: 1rem;
 }
 
 .selected-exercise-list {
@@ -1294,6 +1601,20 @@ details.calendar-event-row {
     grid-template-columns: 1fr;
   }
 
+  .exercise-editor-grid,
+  .plan-builder-layout,
+  .plan-template-row {
+    grid-template-columns: 1fr;
+  }
+
+  .court-diagram {
+    min-height: 320px;
+  }
+
+  .selected-exercise-dropzone {
+    min-height: 260px;
+  }
+
   .user-row-main {
     grid-template-columns: 1fr;
   }
@@ -1351,5 +1672,13 @@ details.calendar-event-row {
 
   .standings-table {
     min-width: 560px;
+  }
+
+  .court-item-row {
+    grid-template-columns: 1fr;
+  }
+
+  .court-path-row {
+    grid-template-columns: 1fr;
   }
 }

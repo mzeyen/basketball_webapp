@@ -31,8 +31,13 @@ export type TrainingExercise = {
   id: string;
   title: string;
   description: string;
+  coachingPoints?: string;
+  courtDiagram?: string;
+  load?: string;
+  organization?: string;
   team?: TeamGroup | null;
   tags: string[];
+  templateName?: string;
   originalFileName: string;
   storedFileName: string;
   mimeType: string;
@@ -193,7 +198,12 @@ export async function deleteTrainingExercise(id: string): Promise<TrainingExerci
 export async function createTrainingExercise(input: {
   title: string;
   description: string;
+  coachingPoints?: string;
+  courtDiagram?: string;
+  load?: string;
+  organization?: string;
   tags: string[];
+  templateName?: string;
   team?: TeamGroup | null;
   file: File;
   mediaFile?: File | null;
@@ -222,8 +232,13 @@ export async function createTrainingExercise(input: {
     id,
     title: input.title,
     description: input.description,
+    coachingPoints: input.coachingPoints,
+    courtDiagram: input.courtDiagram,
+    load: input.load,
+    organization: input.organization,
     team: input.team ?? null,
     tags: input.tags,
+    templateName: input.templateName,
     originalFileName: input.file.name,
     storedFileName,
     mimeType: input.file.type,

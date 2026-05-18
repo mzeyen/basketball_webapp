@@ -30,6 +30,11 @@ export async function uploadTrainingExerciseAction(formData: FormData): Promise<
 
   const title = getString(formData, "title");
   const description = getString(formData, "description");
+  const coachingPoints = getString(formData, "coachingPoints");
+  const courtDiagram = getString(formData, "courtDiagram");
+  const load = getString(formData, "load");
+  const organization = getString(formData, "organization");
+  const templateName = getString(formData, "templateName");
   const team = getString(formData, "team");
   const tags = normalizeExerciseTags(getString(formData, "tags"));
   const file = formData.get("file");
@@ -51,8 +56,13 @@ export async function uploadTrainingExerciseAction(formData: FormData): Promise<
   await createTrainingExercise({
     title,
     description,
+    coachingPoints: coachingPoints || undefined,
+    courtDiagram: courtDiagram || undefined,
+    load: load || undefined,
+    organization: organization || undefined,
     team: isTeamGroup(team) ? team : null,
     tags,
+    templateName: templateName || undefined,
     file,
     mediaFile: hasMediaFile ? mediaFile : null,
     uploadedBy: session.userId,

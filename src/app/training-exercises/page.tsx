@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
+import { CourtDiagramPreview } from "@/components/CourtDiagramPreview";
+import { ExerciseDesigner } from "@/components/ExerciseDesigner";
 import { requireUserSession } from "@/lib/auth/session";
 import { findUserById, listUsers, toPublicUser } from "@/lib/db";
 import { deleteTrainingExerciseAction, uploadTrainingExerciseAction } from "@/lib/training-exercise-actions";
@@ -123,14 +125,7 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
           {params.uploaded ? <p className="form-success">Übung wurde gespeichert.</p> : null}
           {params.deleted ? <p className="form-success">Übung wurde gelöscht.</p> : null}
           <form action={uploadTrainingExerciseAction} className="stack">
-            <label>
-              Titel
-              <input name="title" minLength={3} required placeholder="z. B. Closeout mit Wurfabschluss" />
-            </label>
-            <label>
-              Tags
-              <input name="tags" required placeholder="z. B. wurf, defense, u16" />
-            </label>
+            <ExerciseDesigner />
             <label>
               Team
               <select name="team" defaultValue="">
@@ -145,14 +140,6 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
             <p className="muted">
               Trenne Tags mit Kommas. Es werden maximal {maxTrainingExerciseTags} Tags pro Übung gespeichert.
             </p>
-            <label>
-              Beschreibung
-              <textarea
-                name="description"
-                rows={4}
-                placeholder="Organisation, Ablauf oder Coaching-Punkte zur Übung"
-              />
-            </label>
             <label>
               Datei
               <input
@@ -268,6 +255,23 @@ export default async function TrainingExercisesPage({ searchParams }: TrainingEx
                           "Unbekannt"}
                       </p>
                       {exercise.description ? <p>{exercise.description}</p> : null}
+                      {exercise.organization ? (
+                        <p className="muted">
+                          <strong>Organisation:</strong> {exercise.organization}
+                        </p>
+                      ) : null}
+                      {exercise.coachingPoints ? (
+                        <p className="muted">
+                          <strong>Coaching:</strong> {exercise.coachingPoints}
+                        </p>
+                      ) : null}
+                      {exercise.load ? (
+                        <p className="muted">
+                          <strong>Belastung:</strong> {exercise.load}
+                        </p>
+                      ) : null}
+                      {exercise.templateName ? <p className="muted">Vorlage: {exercise.templateName}</p> : null}
+                      <CourtDiagramPreview exercise={exercise} />
                       <p className="muted">{exercise.originalFileName}</p>
                       {exercise.mediaOriginalFileName ? (
                         <p className="muted">
