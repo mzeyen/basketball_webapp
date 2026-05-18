@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { readFile } from "fs/promises";
-import path from "path";
 
 import { AppHeader } from "@/components/AppHeader";
 import { ClubBrand } from "@/components/ClubBrand";
@@ -13,34 +11,6 @@ import { getTeamStandings, listTeamStandingConfigs } from "@/lib/team-standings"
 import { getTeamGroupLabel } from "@/lib/teams";
 import { listTrainingExercises } from "@/lib/training-exercises";
 import { listTrainingPlans } from "@/lib/training-plans";
-
-type FeatureSection = {
-  items: string[];
-  title: string;
-};
-
-const featuresFilePath = path.join(process.cwd(), "FEATURES.md");
-
-function parseFeatureSections(markdown: string): FeatureSection[] {
-  const sections: FeatureSection[] = [];
-  let current: FeatureSection | null = null;
-
-  for (const rawLine of markdown.split(/\r?\n/)) {
-    const line = rawLine.trim();
-
-    if (line.startsWith("## ")) {
-      current = { title: line.slice(3).trim(), items: [] };
-      sections.push(current);
-      continue;
-    }
-
-    if (line.startsWith("- ") && current) {
-      current.items.push(line.slice(2).trim());
-    }
-  }
-
-  return sections;
-}
 
 type RecentUpload = {
   createdBy: string;
@@ -61,12 +31,18 @@ function formatTime(value: string): string {
   return new Date(value).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 }
 
+async function getConfiguredStandingsList() {
+  const standingsConfigs = await listTeamStandingConfigs();
+  const configuredTeams = standingsConfigs.filter((config) => config.leagueId.trim().length > 0).map((config) => config.team);
+
+  return configuredTeams.length > 0 ? Promise.all(configuredTeams.map((team) => getTeamStandings(team))) : [await getTeamStandings(null)];
+}
+
 export default async function DashboardPage() {
   const session = await getCurrentSession();
 
   if (!session) {
-    const featureMarkdown = await readFile(featuresFilePath, "utf8");
-    const featureSections = parseFeatureSections(featureMarkdown);
+    const standingsList = await getConfiguredStandingsList();
 
     return (
       <>
@@ -88,28 +64,7 @@ export default async function DashboardPage() {
               </div>
             </div>
           </section>
-
-          <section className="card stack">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">FEATURES.md</p>
-                <h2>Funktionsübersicht</h2>
-                <p className="muted">Die wichtigsten Inhalte der Feature-Datei in lesbarer Form.</p>
-              </div>
-            </div>
-            <div className="public-feature-sections">
-              {featureSections.map((section) => (
-                <article className="public-feature-section" key={section.title}>
-                  <h3>{section.title}</h3>
-                  <ul>
-                    {section.items.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
-          </section>
+          <TeamStandingsWidget standingsList={standingsList} />
         </main>
       </>
     );
@@ -124,13 +79,12 @@ export default async function DashboardPage() {
     return date;
   });
 
-  const [user, users, trainingPlans, trainingExercises, calendarEvents, standingsConfigs] = await Promise.all([
+  const [user, users, trainingPlans, trainingExercises, calendarEvents] = await Promise.all([
     findUserById(session.userId),
     listUsers(),
     listTrainingPlans(),
     listTrainingExercises(),
     listCalendarEvents({ from: now.toISOString(), to: nextMonth.toISOString() }),
-    listTeamStandingConfigs(),
   ]);
 
   if (!user) {
@@ -138,8 +92,7 @@ export default async function DashboardPage() {
   }
 
   const publicUser = toPublicUser(user);
-  const configuredTeams = standingsConfigs.filter((config) => config.leagueId.trim().length > 0).map((config) => config.team);
-  const standingsList = configuredTeams.length > 0 ? await Promise.all(configuredTeams.map((team) => getTeamStandings(team))) : [await getTeamStandings(null)];
+  const standingsList = await getConfiguredStandingsList();
   const usersById = new Map(users.map((item) => [item.id, item]));
   const trainingPlansById = new Map(trainingPlans.map((plan) => [plan.id, plan]));
   const upcomingEvents = calendarEvents.slice(0, 4);

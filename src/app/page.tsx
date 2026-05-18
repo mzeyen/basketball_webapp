@@ -5,9 +5,10 @@ import { ClubBrand } from "@/components/ClubBrand";
 import { getCurrentSession } from "@/lib/auth/session";
 import { appBranding } from "@/lib/branding";
 import { findUserById, toPublicUser } from "@/lib/db";
+import { getFeatureContent } from "@/lib/features";
 
 export default async function HomePage() {
-  const session = await getCurrentSession();
+  const [session, featureContent] = await Promise.all([getCurrentSession(), getFeatureContent()]);
   const user = session ? await findUserById(session.userId) : null;
   const publicUser = user ? toPublicUser(user) : null;
 
@@ -18,7 +19,7 @@ export default async function HomePage() {
         <section className="hero hero-single">
           <div>
             <ClubBrand className="hero-brand" size="large" />
-            <p className="eyebrow">Team, Training, Taktik</p>
+            <p className="eyebrow">Training, Kalender, Dokumente</p>
             <h1>{appBranding.heroTitle}</h1>
             <p className="muted">{appBranding.heroText}</p>
             {publicUser ? (
@@ -37,6 +38,31 @@ export default async function HomePage() {
             )}
           </div>
         </section>
+
+        <details className="card stack collapsible-card">
+          <summary className="data-row-summary">
+            <div>
+              <h2>Funktionsübersicht</h2>
+              {featureContent.intro.map((paragraph) => (
+                <p className="muted" key={paragraph}>
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </summary>
+          <div className="public-feature-sections">
+            {featureContent.sections.map((section) => (
+              <article className="public-feature-section" key={section.title}>
+                <h3>{section.title}</h3>
+                <ul>
+                  {section.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </details>
       </main>
     </>
   );

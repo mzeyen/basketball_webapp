@@ -1,6 +1,6 @@
 # CourtControl Features
 
-CourtControl ist eine Basketball-Webapp für Vereine und Teams. Die App bündelt Trainingsplanung, Kalender, Teamverwaltung und geschützte Dokumentablage in einem zentralen System.
+CourtControl ist eine Basketball-Webapp für Vereine und Teams. Die App bündelt Trainingsplanung, Kalender, Teamverwaltung, Tabellen und geschützte Dokumentablage in einem zentralen System.
 
 ## Öffentlicher Einstieg
 
@@ -26,7 +26,7 @@ CourtControl ist eine Basketball-Webapp für Vereine und Teams. Die App bündelt
 ## Kalender
 
 - Trainingstermine erstellen und verwalten.
-- Termine nach Monat und Team filtern.
+- Termine nach Monat und frei angelegtem Team filtern.
 - Ort, Notizen und optionale Trainingsplan-Verknüpfung.
 - Berechtigte Nutzer können eigene Termine löschen, Admins alle Termine.
 
@@ -50,10 +50,10 @@ CourtControl ist eine Basketball-Webapp für Vereine und Teams. Die App bündelt
 
 ## Teams
 
-- Standardteams: U10, U12, U14, U16, U19 und Damen.
-- Admins können eigene Teams anlegen, zum Beispiel `u12-2`.
+- Teams werden frei im Adminbereich angelegt.
+- Standardmäßig sind keine Mannschaften vorgegeben; die benötigten Teams werden zuerst erstellt.
 - Neue Teams erscheinen in Kalender, Trainingsplänen, Übungen, Nutzerzuordnung und Tabellen-Konfiguration.
-- `Coaches` ist kein Team und wird nicht mehr als Mannschaft geführt.
+- Teamnamen bleiben flexibel und können an die Struktur des Vereins angepasst werden.
 
 ## Tabellen
 
