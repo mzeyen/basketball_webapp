@@ -36,7 +36,14 @@ type ExerciseTemplate = {
 
 type ActiveCourtDrag =
   | { id: string; kind: "item" }
-  | { id: string; kind: "path-target" }
+  | {
+      id: string;
+      initialToX: number;
+      initialToY: number;
+      kind: "path-target";
+      startX: number;
+      startY: number;
+    }
   | {
       id: string;
       initialFromX: number;
@@ -196,8 +203,8 @@ function getPathDirectionHandlePosition(path: CourtPath): { x: number; y: number
   const fixedOffset = Math.min(4, length * 0.45);
 
   return {
-    x: path.toX - (deltaX / length) * fixedOffset,
-    y: path.toY - (deltaY / length) * fixedOffset,
+    x: path.toX + (deltaX / length) * fixedOffset,
+    y: path.toY + (deltaY / length) * fixedOffset,
   };
 }
 
@@ -252,15 +259,6 @@ export function ExerciseDesigner() {
     updateItem(id, { x: clampCoordinate(x), y: clampCoordinate(y) });
   }
 
-  function movePathPoint(id: string, point: "from" | "to", x: number, y: number) {
-    updatePath(
-      id,
-      point === "from"
-        ? { fromX: clampCoordinate(x), fromY: clampCoordinate(y) }
-        : { toX: clampCoordinate(x), toY: clampCoordinate(y) },
-    );
-  }
-
   function removeItem(id: string) {
     setCourtItems((current) => current.filter((item) => item.id !== id));
   }
@@ -282,7 +280,10 @@ export function ExerciseDesigner() {
     }
 
     if (activeDrag.kind === "path-target") {
-      movePathPoint(activeDrag.id, "to", position.x, position.y);
+      updatePath(activeDrag.id, {
+        toX: clampCoordinate(activeDrag.initialToX + position.x - activeDrag.startX),
+        toY: clampCoordinate(activeDrag.initialToY + position.y - activeDrag.startY),
+      });
       return;
     }
 
@@ -434,8 +435,19 @@ export function ExerciseDesigner() {
                     onPointerDown={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
+                      const position = getCourtElementPosition(event);
+                      if (!position) {
+                        return;
+                      }
                       event.currentTarget.setPointerCapture(event.pointerId);
-                      setActiveDrag({ id: path.id, kind: "path-target" });
+                      setActiveDrag({
+                        id: path.id,
+                        initialToX: path.toX,
+                        initialToY: path.toY,
+                        kind: "path-target",
+                        startX: position.x,
+                        startY: position.y,
+                      });
                     }}
                     role="button"
                     tabIndex={0}
@@ -493,22 +505,6 @@ export function ExerciseDesigner() {
                         </option>
                       ))}
                     </select>
-                  </label>
-                  <label>
-                    Start X
-                    <input min="4" max="96" type="number" value={Math.round(path.fromX)} onChange={(event) => updatePath(path.id, { fromX: clampCoordinate(Number(event.currentTarget.value)) })} />
-                  </label>
-                  <label>
-                    Start Y
-                    <input min="4" max="96" type="number" value={Math.round(path.fromY)} onChange={(event) => updatePath(path.id, { fromY: clampCoordinate(Number(event.currentTarget.value)) })} />
-                  </label>
-                  <label>
-                    Ziel X
-                    <input min="4" max="96" type="number" value={Math.round(path.toX)} onChange={(event) => updatePath(path.id, { toX: clampCoordinate(Number(event.currentTarget.value)) })} />
-                  </label>
-                  <label>
-                    Ziel Y
-                    <input min="4" max="96" type="number" value={Math.round(path.toY)} onChange={(event) => updatePath(path.id, { toY: clampCoordinate(Number(event.currentTarget.value)) })} />
                   </label>
                   <button className="danger-button" type="button" onClick={() => removePath(path.id)}>
                     Entfernen

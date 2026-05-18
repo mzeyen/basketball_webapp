@@ -872,12 +872,7 @@ details.calendar-event-row {
   align-items: end;
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: minmax(110px, 1fr) repeat(4, minmax(70px, 0.6fr)) auto;
-}
-
-.court-path-row input {
-  padding-left: 0.7rem;
-  padding-right: 0.7rem;
+  grid-template-columns: minmax(160px, 1fr) auto;
 }
 
 .exercise-picker-row {
