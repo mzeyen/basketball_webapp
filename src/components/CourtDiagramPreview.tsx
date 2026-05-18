@@ -54,6 +54,13 @@ function clampCoordinate(value: number | undefined): number {
   return Math.max(4, Math.min(96, value ?? 50));
 }
 
+function rotateCourtPoint(x: number, y: number): { x: number; y: number } {
+  return {
+    x: y,
+    y: 100 - x,
+  };
+}
+
 export function CourtDiagramPreview({ exercise }: { exercise: TrainingExercise }) {
   const items = parseCourtItems(exercise.courtDiagram);
   const paths = parseCourtPaths(exercise.courtDiagram);
@@ -64,14 +71,7 @@ export function CourtDiagramPreview({ exercise }: { exercise: TrainingExercise }
 
   return (
     <div className="court-diagram court-diagram-preview" aria-label={`Court-Diagramm von ${exercise.title}`}>
-      <div className="court-half court-top" />
-      <div className="court-center-circle" />
-      <div className="court-three-point court-three-point-top" />
-      <div className="court-three-point court-three-point-bottom" />
-      <div className="court-key court-key-top" />
-      <div className="court-key court-key-bottom" />
-      <div className="court-rim court-rim-top" />
-      <div className="court-rim court-rim-bottom" />
+      <div className="court-diagram-background" aria-hidden="true" />
       <svg className="court-path-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <marker id={`court-preview-arrow-run-${exercise.id}`} markerHeight="5" markerWidth="5" orient="auto" refX="4" refY="2.5">
@@ -84,27 +84,36 @@ export function CourtDiagramPreview({ exercise }: { exercise: TrainingExercise }
             <path d="M0,0 L5,2.5 L0,5 Z" />
           </marker>
         </defs>
-        {paths.map((path, index) => (
-          <line
-            className={`court-path court-path-${path.type ?? "run"}`}
-            key={path.id ?? index}
-            markerEnd={`url(#court-preview-arrow-${path.type ?? "run"}-${exercise.id})`}
-            x1={clampCoordinate(path.fromX)}
-            y1={clampCoordinate(path.fromY)}
-            x2={clampCoordinate(path.toX)}
-            y2={clampCoordinate(path.toY)}
-          />
-        ))}
+        {paths.map((path, index) => {
+          const from = rotateCourtPoint(clampCoordinate(path.fromX), clampCoordinate(path.fromY));
+          const to = rotateCourtPoint(clampCoordinate(path.toX), clampCoordinate(path.toY));
+
+          return (
+            <line
+              className={`court-path court-path-${path.type ?? "run"}`}
+              key={path.id ?? index}
+              markerEnd={`url(#court-preview-arrow-${path.type ?? "run"}-${exercise.id})`}
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+            />
+          );
+        })}
       </svg>
-      {items.map((item, index) => (
-        <span
-          className={`court-token court-token-${item.type ?? "player"}`}
-          key={item.id ?? index}
-          style={{ left: `${clampCoordinate(item.x)}%`, top: `${clampCoordinate(item.y)}%` }}
-        >
-          {item.label || "O"}
-        </span>
-      ))}
+      {items.map((item, index) => {
+        const position = rotateCourtPoint(clampCoordinate(item.x), clampCoordinate(item.y));
+
+        return (
+          <span
+            className={`court-token court-token-${item.type ?? "player"}`}
+            key={item.id ?? index}
+            style={{ left: `${position.x}%`, top: `${position.y}%` }}
+          >
+            {item.label || "O"}
+          </span>
+        );
+      })}
     </div>
   );
 }

@@ -208,6 +208,20 @@ function getPathDirectionHandlePosition(path: CourtPath): { x: number; y: number
   };
 }
 
+function rotateCourtPoint(x: number, y: number): { x: number; y: number } {
+  return {
+    x: y,
+    y: 100 - x,
+  };
+}
+
+function unrotateCourtPoint(x: number, y: number): { x: number; y: number } {
+  return {
+    x: 100 - y,
+    y: x,
+  };
+}
+
 export function ExerciseDesigner() {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [title, setTitle] = useState("");
@@ -272,7 +286,8 @@ export function ExerciseDesigner() {
       return;
     }
 
-    const position = getCourtPosition(event);
+    const rendered = getCourtPosition(event);
+    const position = unrotateCourtPoint(rendered.x, rendered.y);
 
     if (activeDrag.kind === "item") {
       moveItem(activeDrag.id, position.x, position.y);
@@ -370,14 +385,7 @@ export function ExerciseDesigner() {
             onPointerMove={moveActiveCourtElement}
             onPointerUp={() => setActiveDrag(null)}
           >
-            <div className="court-half court-top" />
-            <div className="court-center-circle" />
-            <div className="court-three-point court-three-point-top" />
-            <div className="court-three-point court-three-point-bottom" />
-            <div className="court-key court-key-top" />
-            <div className="court-key court-key-bottom" />
-            <div className="court-rim court-rim-top" />
-            <div className="court-rim court-rim-bottom" />
+            <div className="court-diagram-background" aria-hidden="true" />
             <svg className="court-path-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
               <defs>
                 <marker id="court-editor-arrow-run" markerHeight="5" markerWidth="5" orient="auto" refX="4" refY="2.5">
@@ -401,6 +409,7 @@ export function ExerciseDesigner() {
                     if (!position) {
                       return;
                     }
+                    const logical = unrotateCourtPoint(position.x, position.y);
                     event.currentTarget.setPointerCapture(event.pointerId);
                     setActiveDrag({
                       id: path.id,
@@ -409,53 +418,65 @@ export function ExerciseDesigner() {
                       initialToX: path.toX,
                       initialToY: path.toY,
                       kind: "path",
-                      startX: position.x,
-                      startY: position.y,
+                      startX: logical.x,
+                      startY: logical.y,
                     });
                   }}
                 >
                   <line
                     className="court-path-hit"
-                    x1={path.fromX}
-                    y1={path.fromY}
-                    x2={path.toX}
-                    y2={path.toY}
+                    x1={rotateCourtPoint(path.fromX, path.fromY).x}
+                    y1={rotateCourtPoint(path.fromX, path.fromY).y}
+                    x2={rotateCourtPoint(path.toX, path.toY).x}
+                    y2={rotateCourtPoint(path.toX, path.toY).y}
                   />
                   <line
                     className={`court-path court-path-${path.type}`}
                     markerEnd={`url(#court-editor-arrow-${path.type})`}
-                    x1={path.fromX}
-                    y1={path.fromY}
-                    x2={path.toX}
-                    y2={path.toY}
+                    x1={rotateCourtPoint(path.fromX, path.fromY).x}
+                    y1={rotateCourtPoint(path.fromX, path.fromY).y}
+                    x2={rotateCourtPoint(path.toX, path.toY).x}
+                    y2={rotateCourtPoint(path.toX, path.toY).y}
                   />
-                  <g
-                    aria-label={`${pathLabels[path.type]} Richtung aendern`}
-                    className={`court-path-direction-handle court-path-direction-handle-${path.type}`}
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      const position = getCourtElementPosition(event);
-                      if (!position) {
-                        return;
-                      }
-                      event.currentTarget.setPointerCapture(event.pointerId);
-                      setActiveDrag({
-                        id: path.id,
-                        initialToX: path.toX,
-                        initialToY: path.toY,
-                        kind: "path-target",
-                        startX: position.x,
-                        startY: position.y,
-                      });
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    transform={`translate(${getPathDirectionHandlePosition(path).x} ${getPathDirectionHandlePosition(path).y}) rotate(${getPathAngle(path)})`}
-                  >
-                    <circle r="2.1" />
-                    <path d="M-0.7,-0.85 L0.85,0 L-0.7,0.85" />
-                  </g>
+                  {(() => {
+                    const handlePosition = getPathDirectionHandlePosition(path);
+                    const transformedHandlePosition = rotateCourtPoint(handlePosition.x, handlePosition.y);
+                    const transformedTo = rotateCourtPoint(path.toX, path.toY);
+                    const transformedFrom = rotateCourtPoint(path.fromX, path.fromY);
+                    const transformedAngle =
+                      Math.atan2(transformedTo.y - transformedFrom.y, transformedTo.x - transformedFrom.x) * (180 / Math.PI);
+
+                    return (
+                      <g
+                        aria-label={`${pathLabels[path.type]} Richtung aendern`}
+                        className={`court-path-direction-handle court-path-direction-handle-${path.type}`}
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          const position = getCourtElementPosition(event);
+                          if (!position) {
+                            return;
+                          }
+                          const logical = unrotateCourtPoint(position.x, position.y);
+                          event.currentTarget.setPointerCapture(event.pointerId);
+                          setActiveDrag({
+                            id: path.id,
+                            initialToX: path.toX,
+                            initialToY: path.toY,
+                            kind: "path-target",
+                            startX: logical.x,
+                            startY: logical.y,
+                          });
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        transform={`translate(${transformedHandlePosition.x} ${transformedHandlePosition.y}) rotate(${transformedAngle})`}
+                      >
+                        <circle r="2.1" />
+                        <path d="M-0.7,-0.85 L0.85,0 L-0.7,0.85" />
+                      </g>
+                    );
+                  })()}
                 </g>
               ))}
             </svg>
@@ -469,7 +490,10 @@ export function ExerciseDesigner() {
                   event.currentTarget.setPointerCapture(event.pointerId);
                   setActiveDrag({ id: item.id, kind: "item" });
                 }}
-                style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                style={{
+                  left: `${rotateCourtPoint(item.x, item.y).x}%`,
+                  top: `${rotateCourtPoint(item.x, item.y).y}%`,
+                }}
                 title="Zum Verschieben ziehen"
                 type="button"
               >

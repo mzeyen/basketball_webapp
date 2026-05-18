@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 3000" role="img" aria-label="Basketball court diagram">
+  <rect x="12" y="12" width="1676" height="2976" fill="#ffffff" stroke="#111111" stroke-width="6"/>
+
+  <line x1="850" y1="12" x2="850" y2="2988" stroke="#111111" stroke-width="6"/>
+  <circle cx="850" cy="1500" r="115" fill="none" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 12 210 C 130 210 205 210 205 210" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1495 210 C 1570 210 1630 210 1688 210" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 12 2790 C 130 2790 205 2790 205 2790" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1495 2790 C 1570 2790 1630 2790 1688 2790" fill="none" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 205 210
+           C 650 310 720 820 720 1500
+           C 720 2180 650 2690 205 2790"
+        fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1495 210
+           C 1050 310 980 820 980 1500
+           C 980 2180 1050 2690 1495 2790"
+        fill="none" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 12 1020 H 340" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 12 1980 H 340" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1360 1020 H 1688" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1360 1980 H 1688" fill="none" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 95 1350
+           A 220 220 0 0 1 95 1650"
+        fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 95 1650 H 145" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 95 1350 H 145" fill="none" stroke="#111111" stroke-width="6"/>
+  <circle cx="105" cy="1500" r="24" fill="none" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 515 1260
+           A 235 235 0 0 0 515 1740"
+        fill="none" stroke="#111111" stroke-width="6" stroke-dasharray="36 28"/>
+  <path d="M 515 1260 H 590" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 515 1740 H 590" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 590 1260 V 1740" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 590 1260
+           A 235 235 0 0 1 590 1740"
+        fill="none" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 1605 1350
+           A 220 220 0 0 0 1605 1650"
+        fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1605 1650 H 1555" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1605 1350 H 1555" fill="none" stroke="#111111" stroke-width="6"/>
+  <circle cx="1595" cy="1500" r="24" fill="none" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 1190 1260
+           A 235 235 0 0 1 1190 1740"
+        fill="none" stroke="#111111" stroke-width="6" stroke-dasharray="36 28"/>
+  <path d="M 1190 1260 H 1115" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1190 1740 H 1115" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1115 1260 V 1740" fill="none" stroke="#111111" stroke-width="6"/>
+  <path d="M 1115 1260
+           A 235 235 0 0 0 1115 1740"
+        fill="none" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 120 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 215 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 310 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 360 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 460 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 1310 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 1410 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 1460 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 1560 1000 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 120 1960 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 215 1960 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 310 1960 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 360 1960 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 460 1960 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 1310 1960 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 1410 1960 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 1460 1960 v 40" stroke="#111111" stroke-width="6"/>
+  <path d="M 1560 1960 v 40" stroke="#111111" stroke-width="6"/>
+
+  <path d="M 850 1000 v -10" stroke="#111111" stroke-width="6"/>
+  <path d="M 850 2010 v 10" stroke="#111111" stroke-width="6"/>
+</svg>
